@@ -606,8 +606,9 @@ export default function WarWatch() {
     const ev=EVENTS.filter(e=>Math.floor((new Date(e.date)-WAR_START)/86400000)<=tDay).map(e=>`[${e.date}] ${e.title}: ${e.desc}`).join("\n");
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system:"You are a senior OSINT analyst at ISW/CTP. Write professional military situation reports. No preamble.",messages:[{role:"user",content:`Situation report: 2026 Iran War — Day ${tDay+1} (${dayToDate(tDay)}).\n\nOSINT:\n${ev}\n\nFormat:\nEXECUTIVE SUMMARY\n[2-3 sentences]\n\nKEY DEVELOPMENTS — LAST 24H\n[5-7 bullets]\n\nSTRATEGIC ASSESSMENT\n[Campaign trajectory, degradation, escalation]\n\nCRITICAL INDICATORS\n[3-4 items]\n\nMax 450 words.`}]})});
+      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
       const d=await r.json();setSitrep(d.content[0].text);
-    }catch{setSitrep("⚠ API unavailable.");}
+    }catch(e){setSitrep(`⚠ API error: ${e.message}`);}
     setSitLoad(false);
   };
 
@@ -624,13 +625,14 @@ Mix event types: strike BDA, missile intercepts, diplomatic statements, humanita
 
 Return a JSON array of 12 objects with these exact keys:
 time (HH:MM), source (news org or military), text (1-2 sentence update), type (one of: strike, intercept, diplomatic, humanitarian, energy, analysis), side (one of: us_il, iran, intl)`}]})});
+      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
       const d=await r.json();
       const raw=d.content[0].text;
       const start=raw.indexOf("["), end=raw.lastIndexOf("]");
       if(start===-1||end===-1) throw new Error("No array");
       setFeedItems(JSON.parse(raw.slice(start,end+1)));
       setNewAlert(true);setTimeout(()=>setNewAlert(false),4000);
-    }catch{setFeedItems([{time:"ERR",source:"System",text:"Feed unavailable — check API connection.",type:"analysis",side:"intl"}]);}
+    }catch(e){setFeedItems([{time:"ERR",source:"System",text:`Feed unavailable: ${e.message}`,type:"analysis",side:"intl"}]);}
     setFeedLoad(false);
   };
 
@@ -652,6 +654,7 @@ Use these channels with these styles:
 
 Return a JSON array of exactly 12 objects, each with these exact keys:
 channel (string starting with @), time (HH:MM format), text (the post content), views (integer), type (one of: text, video, photo), verified (boolean)`}]})});
+      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
       const d=await r.json();
       const raw=d.content[0].text;
       // Robustly extract JSON array even if surrounded by text
@@ -693,6 +696,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
         model:"claude-sonnet-4-6",max_tokens:1200,
         system:"You are a JSON generator. Respond with ONLY a raw JSON array. No explanation, no markdown, no code fences. Start with [ and end with ].",
         messages:[{role:"user",content:`Generate 10 OSINT news feed items covering the 2026 Iran War: ${daysLabel}. These are EARLIER events — reflect what was happening at that point in the war. Use timestamps and context appropriate to that window. Sources: CENTCOM, IDF, Reuters, Al Jazeera, ISW, IRGC wire, WHO. Return JSON:\n[{"time":"HH:MM","date":"YYYY-MM-DD","source":"...","text":"...","type":"strike|intercept|diplomatic|humanitarian|energy|analysis","side":"us_il|iran|intl"}]`}]})});
+      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
       const d=await r.json();
       const raw=d.content[0].text;
       const s=raw.indexOf("["),e=raw.lastIndexOf("]");
@@ -716,6 +720,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
         model:"claude-sonnet-4-6",max_tokens:1200,
         system:"You are a JSON generator. Respond with ONLY a raw JSON array. No explanation, no markdown, no code fences. Start with [ and end with ].",
         messages:[{role:"user",content:`Generate 10 Telegram/OSINT channel posts covering the 2026 Iran War: ${daysLabel}. These are EARLIER posts — reflect what was happening and being discussed at that point. Channels: @IDFSpokesperson (IDF updates), @IRNA_NEWS (Iranian state), @CENTCOMNews (US military), @OSINTdefender (OSINT analyst), @IntelDoge (aggregator), @HouthiMilSpo (Houthi). Use dates matching that period. JSON:\n[{"channel":"@handle","time":"HH:MM","date":"YYYY-MM-DD","text":"...","views":1234,"type":"text|video|photo","verified":true}]`}]})});
+      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
       const d=await r.json();
       const raw=d.content[0].text;
       const s=raw.indexOf("["),e=raw.lastIndexOf("]");
