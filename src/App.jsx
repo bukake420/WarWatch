@@ -605,7 +605,7 @@ export default function WarWatch() {
     setSitLoad(true);setTab("sitrep");
     const ev=EVENTS.filter(e=>Math.floor((new Date(e.date)-WAR_START)/86400000)<=tDay).map(e=>`[${e.date}] ${e.title}: ${e.desc}`).join("\n");
     try{
-      const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are a senior OSINT analyst at ISW/CTP. Write professional military situation reports. No preamble.",messages:[{role:"user",content:`Situation report: 2026 Iran War — Day ${tDay+1} (${dayToDate(tDay)}).\n\nOSINT:\n${ev}\n\nFormat:\nEXECUTIVE SUMMARY\n[2-3 sentences]\n\nKEY DEVELOPMENTS — LAST 24H\n[5-7 bullets]\n\nSTRATEGIC ASSESSMENT\n[Campaign trajectory, degradation, escalation]\n\nCRITICAL INDICATORS\n[3-4 items]\n\nMax 450 words.`}]})});
+      const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system:"You are a senior OSINT analyst at ISW/CTP. Write professional military situation reports. No preamble.",messages:[{role:"user",content:`Situation report: 2026 Iran War — Day ${tDay+1} (${dayToDate(tDay)}).\n\nOSINT:\n${ev}\n\nFormat:\nEXECUTIVE SUMMARY\n[2-3 sentences]\n\nKEY DEVELOPMENTS — LAST 24H\n[5-7 bullets]\n\nSTRATEGIC ASSESSMENT\n[Campaign trajectory, degradation, escalation]\n\nCRITICAL INDICATORS\n[3-4 items]\n\nMax 450 words.`}]})});
       const d=await r.json();setSitrep(d.content[0].text);
     }catch{setSitrep("⚠ API unavailable.");}
     setSitLoad(false);
@@ -615,7 +615,7 @@ export default function WarWatch() {
     setFeedLoad(true);setTab("news");setFeedDayOffset(0);
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1200,
+        model:"claude-sonnet-4-6",max_tokens:1200,
         system:"You are a JSON generator. Respond with ONLY a raw JSON array. No markdown, no code fences, no commentary. Start with [ and end with ].",
         messages:[{role:"user",content:`Generate 12 OSINT news feed items for the 2026 Iran War, Day ${tDay+1} (${dayToDate(tDay)}).
 
@@ -638,7 +638,7 @@ time (HH:MM), source (news org or military), text (1-2 sentence update), type (o
     setTgLoad(true);setTab("osint");setTgDayOffset(0);
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1200,
+        model:"claude-sonnet-4-6",max_tokens:1200,
         system:"You are a JSON generator. You must respond with ONLY a raw JSON array. No explanation, no markdown, no code fences, no commentary before or after. Start your response with [ and end with ].",
         messages:[{role:"user",content:`Generate exactly 12 realistic Telegram channel posts for the 2026 Iran-Israel war, Day ${tDay+1}.
 
@@ -690,7 +690,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
     const daysLabel = periodStart===periodEnd ? `Day ${periodStart+1} (${dateFrom})` : `Days ${periodStart+1}–${periodEnd+1} (${dateFrom} – ${dateTo})`;
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1200,
+        model:"claude-sonnet-4-6",max_tokens:1200,
         system:"You are a JSON generator. Respond with ONLY a raw JSON array. No explanation, no markdown, no code fences. Start with [ and end with ].",
         messages:[{role:"user",content:`Generate 10 OSINT news feed items covering the 2026 Iran War: ${daysLabel}. These are EARLIER events — reflect what was happening at that point in the war. Use timestamps and context appropriate to that window. Sources: CENTCOM, IDF, Reuters, Al Jazeera, ISW, IRGC wire, WHO. Return JSON:\n[{"time":"HH:MM","date":"YYYY-MM-DD","source":"...","text":"...","type":"strike|intercept|diplomatic|humanitarian|energy|analysis","side":"us_il|iran|intl"}]`}]})});
       const d=await r.json();
@@ -713,7 +713,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
     const daysLabel = periodStart===periodEnd ? `Day ${periodStart+1} (${dateFrom})` : `Days ${periodStart+1}–${periodEnd+1} (${dateFrom} – ${dateTo})`;
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1200,
+        model:"claude-sonnet-4-6",max_tokens:1200,
         system:"You are a JSON generator. Respond with ONLY a raw JSON array. No explanation, no markdown, no code fences. Start with [ and end with ].",
         messages:[{role:"user",content:`Generate 10 Telegram/OSINT channel posts covering the 2026 Iran War: ${daysLabel}. These are EARLIER posts — reflect what was happening and being discussed at that point. Channels: @IDFSpokesperson (IDF updates), @IRNA_NEWS (Iranian state), @CENTCOMNews (US military), @OSINTdefender (OSINT analyst), @IntelDoge (aggregator), @HouthiMilSpo (Houthi). Use dates matching that period. JSON:\n[{"channel":"@handle","time":"HH:MM","date":"YYYY-MM-DD","text":"...","views":1234,"type":"text|video|photo","verified":true}]`}]})});
       const d=await r.json();
