@@ -1,30 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
-const EVENTS = [
-  { id:1,  lat:35.6892, lng:51.3890, title:"Tehran — IRGC HQ & Palace Complex",      type:"us_il",     date:"2026-03-20", confidence:"confirmed", desc:"Large explosions near Saadabad Palace complex. Series of strikes on military C2 infrastructure. IRGC confirms multiple sites hit.", verified:true },
-  { id:2,  lat:35.7500, lng:51.4200, title:"Tehran — Khamenei Killed (Day 1)",        type:"hvt",       date:"2026-02-28", confidence:"confirmed", desc:"Supreme Leader Ali Khamenei killed in Israeli airstrike. Confirmed by IRIB, Fars News, Trump, and Netanyahu. Son Mojtaba named successor.", verified:true },
-  { id:3,  lat:35.6892, lng:51.3890, title:"Tehran — Larijani Assassinated",          type:"hvt",       date:"2026-03-17", confidence:"confirmed", desc:"Israel assassinated Ali Larijani, Secretary of Iran's Supreme National Security Council. IRGC vowed 'zero restraint' in response.", verified:true },
-  { id:4,  lat:38.0962, lng:46.2738, title:"Tabriz — 2nd Artesh Airbase Cratered",   type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery: 11 craters on runway of 2nd Artesh Air Force Tactical Airbase. Rendered inoperable. IAF destroyed F-4 and two F-5s.", verified:true },
-  { id:5,  lat:37.4000, lng:47.0000, title:"Tabriz — 6th Artesh Aviation Base",      type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery shows damaged logistics facility near 6th Artesh Ground Forces Aviation Base.", verified:true },
-  { id:6,  lat:29.5918, lng:52.5837, title:"Shiraz — 7th Artesh Airbase",            type:"us_il",     date:"2026-03-02", confidence:"confirmed", desc:"Satellite imagery: two craters and damaged building in southern section of 7th Artesh Air Force Tactical Airbase.", verified:true },
-  { id:7,  lat:32.6546, lng:51.6680, title:"Isfahan — Nuclear & Air Defense Sites",  type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Opening US strike package targeted nuclear facilities and air defense near Isfahan. GBU-57 bunker-busters deployed.", verified:true },
-  { id:8,  lat:33.7244, lng:51.7252, title:"Natanz — Enrichment Facility",           type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Natanz uranium enrichment facility targeted in Day 1 strikes. IAEA reported 460kg of 60% enriched uranium on site.", verified:true },
-  { id:9,  lat:29.2569, lng:50.3243, title:"Kharg Island — Oil Export Terminal",     type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"US/Israeli strikes on Kharg Island, Iran's primary oil export terminal.", verified:true },
-  { id:10, lat:27.1500, lng:52.6000, title:"South Pars — Gas Field Strike",          type:"us_il",     date:"2026-03-18", confidence:"confirmed", desc:"Israel struck South Pars gasfield, Iran's largest natural gas reserve. Iran warned 'zero restraint'.", verified:true },
-  { id:11, lat:34.3277, lng:47.0650, title:"Kermanshah — Missile Launchers",         type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"300+ Iranian ballistic missile launchers destroyed across Iran by Mar 3. Iranian missile fire dropped ~90% by day 10.", verified:true },
-  { id:12, lat:34.6416, lng:50.8746, title:"Arak — Civilian Strike",                 type:"us_il",     date:"2026-03-17", confidence:"confirmed", desc:"3-day-old infant and 2-year-old sister killed in strike on residential home in Arak. Mother and grandmother also killed.", verified:true },
-  { id:13, lat:27.1500, lng:57.0833, title:"Minab — Girls School (170+ Dead)",       type:"us_il",     date:"2026-03-10", confidence:"confirmed", desc:"Deadliest single incident. Airstrike on elementary girls' school in Minab killed 170+. Confirmed by Amnesty International.", verified:true },
-  { id:14, lat:31.7517, lng:34.9896, title:"Beit Shemesh — 9 Civilians Killed",      type:"iran",      date:"2026-03-01", confidence:"confirmed", desc:"Deadliest Iranian strike on Israel. Ballistic missile hit residential neighborhood, killing 9 civilians.", verified:true },
-  { id:15, lat:32.0786, lng:34.8207, title:"Ramat Gan — Cluster Warhead",            type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iranian cluster warhead killed two residents in their 70s. IRGC called it 'revenge for Larijani.'", verified:true },
-  { id:16, lat:32.7940, lng:34.9896, title:"Haifa — Iranian Retaliatory Strike",     type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Haifa in retaliation for South Pars attack. Arrow system intercepted majority of barrage.", verified:true },
-  { id:17, lat:31.8928, lng:35.0266, title:"Ben Gurion Airport — Hit",               type:"iran",      date:"2026-03-15", confidence:"confirmed", desc:"Missile struck three private planes on tarmac. Israeli authorities capped outbound flights at 130 passengers.", verified:true },
-  { id:18, lat:31.7683, lng:35.2137, title:"Jerusalem — Holy Site Debris",           type:"iran",      date:"2026-03-17", confidence:"confirmed", desc:"Missile fragments found near Al-Aqsa Mosque and Church of Holy Sepulchre. No casualties.", verified:true },
-  { id:19, lat:25.9000, lng:51.5500, title:"Ras Laffan, Qatar — LNG Terminal Hit",  type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Qatar's LNG export hub. 13 of 14 ballistic missiles intercepted.", verified:true },
-  { id:20, lat:25.1222, lng:56.3367, title:"Fujairah, UAE — Oil Zone Attack",        type:"iran",      date:"2026-03-18", confidence:"confirmed", desc:"Drone attack ignited fire in UAE oil industry zone. Debris killed one Pakistani national in Abu Dhabi.", verified:true },
-  { id:21, lat:33.1000, lng:35.6333, title:"Nahariya — Hezbollah Attack",            type:"hezbollah", date:"2026-03-17", confidence:"confirmed", desc:"Hezbollah launched attack on northern Israel. One man wounded. 1M+ Lebanese displaced.", verified:true },
-  { id:22, lat:24.6877, lng:46.7219, title:"Riyadh — Saudi Intercepts",             type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Saudi Arabia intercepting Iranian missiles in own airspace. KSA says 'trust gone.'", verified:true },
-];
-
 // ─── Static leadership posts (always visible, no API needed) ─────────────────
 const LEADERSHIP_POSTS = [
   { id:1,  person:"Donald Trump",       role:"US President",               country:"🇺🇸", platform:"Truth Social", handle:"@realDonaldTrump", date:"2026-03-20", time:"11:34", color:"#ef4444", verified:true, text:"Iran has been COMPLETELY NEUTRALIZED. The mission is proceeding exactly as planned — maybe even better! Our brave military has destroyed over 300 missile launchers. The Iranian people deserve FREEDOM. We will finish the job. MAKE AMERICA GREAT AGAIN!" },
@@ -513,7 +488,20 @@ export default function WarWatch() {
   const [simMode,    setSimMode]    = useState(false);
   const [newAlert,   setNewAlert]   = useState(false);
   const [satellite,  setSatellite]  = useState(false);
+  const [events,     setEvents]     = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const mainTileRef = useRef(null);
+
+  // Fetch live OSINT events from /api/events, refresh hourly
+  useEffect(()=>{
+    const load=()=>fetch("/api/events")
+      .then(r=>r.json())
+      .then(d=>{ if(Array.isArray(d)){ setEvents(d); setEventsLoading(false); } })
+      .catch(()=>setEventsLoading(false));
+    load();
+    const iv=setInterval(load,3600_000);
+    return()=>clearInterval(iv);
+  },[]);
 
   useEffect(()=>{ const t=setInterval(()=>setTime(new Date()),1000); return()=>clearInterval(t); },[]);
   useEffect(()=>{
@@ -525,7 +513,7 @@ export default function WarWatch() {
 
   // Events: filtered + sorted latest→oldest when on max day
   const filteredEvents = useMemo(()=>{
-    let ev=EVENTS.filter(e=>Math.floor((new Date(e.date)-WAR_START)/86400000)<=tDay);
+    let ev=events.filter(e=>Math.floor((new Date(e.date)-WAR_START)/86400000)<=tDay);
     if(filter!=="all") ev=ev.filter(e=>e.type===filter);
     if(confFilter!=="all") ev=ev.filter(e=>e.confidence===confFilter);
     // Latest-first when on current day; oldest-first during timeline scrub
@@ -540,7 +528,7 @@ export default function WarWatch() {
     const dayCutoff = new Date(WAR_START); dayCutoff.setDate(dayCutoff.getDate()+tDay);
     let posts = LEADERSHIP_POSTS.filter(p=>new Date(p.date)<=dayCutoff);
     if(leaderFilter!=="all") posts=posts.filter(p=>p.country===leaderFilter);
-    return [...posts].sort((a,b)=>new Date(a.date+"T"+a.time)-new Date(b.date+"T"+b.time));
+    return [...posts].sort((a,b)=>new Date(b.date+"T"+b.time)-new Date(a.date+"T"+a.time));
   },[tDay,leaderFilter]);
 
   const dayCasualties = useMemo(()=>({
@@ -915,6 +903,9 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
           <div style={{flex:1,overflowY:"auto"}}>
 
             {/* ── EVENTS ── */}
+            {tab==="events" && eventsLoading && events.length===0 && (
+              <Spinner color="#3b82f6" label="LOADING OSINT FEED"/>
+            )}
             {tab==="events" && filteredEvents.map(ev=>{
               const cfg=TYPE_CFG[ev.type], sel=selected?.id===ev.id;
               const confC=CONF_CFG[ev.confidence]?.color||"#22c55e";
