@@ -4,7 +4,12 @@ let cache = null, cacheTs = 0;
 // Bounding box: Europe + Middle East + North Africa (wide net to ensure coverage)
 const BBOX = { lamin: 5, lomin: -10, lamax: 65, lomax: 95 };
 
-// Normalize an adsb.lol aircraft object
+const FETCH_OPTS = {
+  signal: AbortSignal.timeout(12000),
+  headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
+};
+
+// Normalize an adsb.lol / airplanes.live aircraft object
 function fromAdsbLol(ac) {
   const lat = ac.lat ?? ac.latitude;
   const lng = ac.lon ?? ac.lng ?? ac.longitude;
@@ -15,13 +20,13 @@ function fromAdsbLol(ac) {
   return {
     id:      ac.hex || ac.icao24,
     callsign: (ac.flight?.trim() || ac.callsign?.trim() || ac.hex || '').toUpperCase(),
-    country:  ac.r ? '' : (ac.dbFlags ? flagToCountry(ac.dbFlags) : 'Unknown'),
+    country:  ac.r || 'Unknown',
     lat,
     lng,
     alt:   typeof ac.alt_baro === 'number' ? Math.round(ac.alt_baro) : null, // already feet
     spd:   ac.gs   != null ? Math.round(ac.gs)   : null, // already knots
     hdg:   ac.track ?? ac.true_heading ?? 0,
-    vrate: ac.baro_rate != null ? Math.round(ac.baro_rate / 196.85 * 10) / 10 : 0, // ft/min → m/s
+    vrate: ac.baro_rate != null ? Math.round(ac.baro_rate / 196.85 * 10) / 10 : 0,
   };
 }
 
@@ -43,28 +48,35 @@ function fromOpenSky(s) {
   };
 }
 
-function flagToCountry(flags) {
-  // dbFlags bit 0 = military, bit 1 = interesting
-  if (flags & 1) return 'Military';
-  return 'Unknown';
+async function fetchAirplanesLive() {
+  // airplanes.live — community ADS-B, same API shape as adsb.lol
+  const url = 'https://api.airplanes.live/v2/lat/45/lon/20/dist/4000';
+  const resp = await fetch(url, FETCH_OPTS);
+  if (!resp.ok) throw new Error(`airplanes.live HTTP ${resp.status}`);
+  const data = await resp.json();
+  const list = data.ac || [];
+  if (!list.length) throw new Error('airplanes.live returned 0 aircraft');
+  return { aircraft: list.map(fromAdsbLol).filter(Boolean), source: 'airplanes.live' };
 }
 
 async function fetchAdsbLol() {
-  // Center on Eastern Mediterranean; 4000nm radius covers Europe → India
-  const url = 'https://api.adsb.lol/v2/lat/40/lon/30/dist/4000';
-  const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
-  if (!resp.ok) throw new Error(`adsb.lol ${resp.status}`);
+  const url = 'https://api.adsb.lol/v2/lat/45/lon/20/dist/4000';
+  const resp = await fetch(url, FETCH_OPTS);
+  if (!resp.ok) throw new Error(`adsb.lol HTTP ${resp.status}`);
   const data = await resp.json();
-  const list = data.ac || data.aircraft || [];
-  return list.map(fromAdsbLol).filter(Boolean);
+  const list = data.ac || [];
+  if (!list.length) throw new Error('adsb.lol returned 0 aircraft');
+  return { aircraft: list.map(fromAdsbLol).filter(Boolean), source: 'adsb.lol' };
 }
 
 async function fetchOpenSky() {
   const url = `https://opensky-network.org/api/states/all?lamin=${BBOX.lamin}&lomin=${BBOX.lomin}&lamax=${BBOX.lamax}&lomax=${BBOX.lomax}`;
-  const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
-  if (!resp.ok) throw new Error(`OpenSky ${resp.status}`);
+  const resp = await fetch(url, FETCH_OPTS);
+  if (!resp.ok) throw new Error(`OpenSky HTTP ${resp.status}`);
   const data = await resp.json();
-  return (data.states || []).map(fromOpenSky).filter(Boolean);
+  const list = data.states || [];
+  if (!list.length) throw new Error('OpenSky returned 0 states');
+  return { aircraft: list.map(fromOpenSky).filter(Boolean), source: 'opensky' };
 }
 
 exports.handler = async () => {
@@ -77,24 +89,24 @@ exports.handler = async () => {
     return { statusCode: 200, headers, body: cache };
   }
 
-  let aircraft = [];
-  let source = 'none';
+  const errors = [];
 
-  try {
-    aircraft = await fetchAdsbLol();
-    source = 'adsb.lol';
-  } catch (e1) {
+  for (const fn of [fetchAirplanesLive, fetchAdsbLol, fetchOpenSky]) {
     try {
-      aircraft = await fetchOpenSky();
-      source = 'opensky';
-    } catch (e2) {
-      if (cache) return { statusCode: 200, headers, body: cache };
-      return { statusCode: 502, headers, body: JSON.stringify({ aircraft: [], error: `${e1.message} / ${e2.message}` }) };
+      const { aircraft, source } = await fn();
+      const body = JSON.stringify({ aircraft, timestamp: Date.now(), count: aircraft.length, source });
+      cache = body; cacheTs = Date.now();
+      return { statusCode: 200, headers, body };
+    } catch (e) {
+      errors.push(e.message);
     }
   }
 
-  const body = JSON.stringify({ aircraft, timestamp: Date.now(), count: aircraft.length, source });
-  cache = body;
-  cacheTs = Date.now();
-  return { statusCode: 200, headers, body };
+  // All sources failed — return stale cache or error with diagnostics
+  if (cache) return { statusCode: 200, headers, body: cache };
+  return {
+    statusCode: 502,
+    headers,
+    body: JSON.stringify({ aircraft: [], error: errors.join(' | '), errors }),
+  };
 };
