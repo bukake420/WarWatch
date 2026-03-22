@@ -1,25 +1,54 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
-// ─── Aircraft & vessel image maps (Wikipedia Commons, public domain) ──────────
+// ─── Aircraft & vessel image maps (Wikipedia Special:FilePath — stable redirects) ──
 const AIRCRAFT_IMG = {
-  'C-17A':        'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/C-17A_of_the_437th_AW.jpg/400px-C-17A_of_the_437th_AW.jpg',
-  'KC-135R':      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/KC-135R.jpg/400px-KC-135R.jpg',
-  'E-3 Sentry':   'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/E-3_Sentry_2.jpg/400px-E-3_Sentry_2.jpg',
-  'P-8A Poseidon':'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/US_Navy_P-8A_Poseidon.jpg/400px-US_Navy_P-8A_Poseidon.jpg',
-  'F-35I Adir':   'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/F-35A_flight_%28cropped%29.jpg/400px-F-35A_flight_%28cropped%29.jpg',
-  'KC-46A':       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/KC-46A_Pegasus_%28cropped%29.jpg/400px-KC-46A_Pegasus_%28cropped%29.jpg',
-  'FA-18F':       'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/F-A-18F_Super_Hornet_VFA-11.jpg/400px-F-A-18F_Super_Hornet_VFA-11.jpg',
-  'MQ-9 Reaper':  'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/MQ-9_Reaper_UAV.jpg/400px-MQ-9_Reaper_UAV.jpg',
-  'B-52H':        'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/B-52_Stratofortress.jpg/400px-B-52_Stratofortress.jpg',
-  'RQ-4 Global':  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/RQ-4_Global_Hawk.jpg/400px-RQ-4_Global_Hawk.jpg',
+  'C-17A':        'https://en.wikipedia.org/wiki/Special:FilePath/C-17A_of_the_437th_AW.jpg?width=400',
+  'KC-135R':      'https://en.wikipedia.org/wiki/Special:FilePath/KC-135R_Stratotanker.jpg?width=400',
+  'E-3 Sentry':   'https://en.wikipedia.org/wiki/Special:FilePath/E-3_Sentry_2.jpg?width=400',
+  'P-8A Poseidon':'https://en.wikipedia.org/wiki/Special:FilePath/US_Navy_P-8A_Poseidon.jpg?width=400',
+  'F-35I Adir':   'https://en.wikipedia.org/wiki/Special:FilePath/F-35A_flight_(cropped).jpg?width=400',
+  'KC-46A':       'https://en.wikipedia.org/wiki/Special:FilePath/KC-46A_Pegasus_refueling.jpg?width=400',
+  'FA-18F':       'https://en.wikipedia.org/wiki/Special:FilePath/FA-18F_Super_Hornet.jpg?width=400',
+  'MQ-9 Reaper':  'https://en.wikipedia.org/wiki/Special:FilePath/MQ-9_Reaper_in_flight_(2007).jpg?width=400',
+  'B-52H':        'https://en.wikipedia.org/wiki/Special:FilePath/B-52H_Stratofortress.jpg?width=400',
+  'RQ-4 Global':  'https://en.wikipedia.org/wiki/Special:FilePath/RQ-4A_Global_Hawk.jpg?width=400',
 };
 const VESSEL_IMG = {
-  'Carrier CSG': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/USS_Gerald_R._Ford_%28CVN-78%29.jpg/400px-USS_Gerald_R._Ford_%28CVN-78%29.jpg',
-  'DDG':         'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/USS_Arleigh_Burke_%28DDG-51%29.jpg/400px-USS_Arleigh_Burke_%28DDG-51%29.jpg',
-  'VLCC':        'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Crude_oil_tanker_AbQaiq.jpg/400px-Crude_oil_tanker_AbQaiq.jpg',
-  'LNG Carrier': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/LNG_Tanker.jpg/400px-LNG_Tanker.jpg',
-  'Container':   'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Container_ship_Essen_Express.jpg/400px-Container_ship_Essen_Express.jpg',
-  'Cargo':       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Cargo_ship.jpg/400px-Cargo_ship.jpg',
+  'Carrier CSG': 'https://en.wikipedia.org/wiki/Special:FilePath/USS_Gerald_R._Ford_(CVN-78).jpg?width=400',
+  'DDG':         'https://en.wikipedia.org/wiki/Special:FilePath/USS_Arleigh_Burke_(DDG-51).jpg?width=400',
+  'VLCC':        'https://en.wikipedia.org/wiki/Special:FilePath/Crude_oil_tanker_AbQaiq.jpg?width=400',
+  'LNG Carrier': 'https://en.wikipedia.org/wiki/Special:FilePath/LNG_tanker_Gemmata.jpg?width=400',
+  'Container':   'https://en.wikipedia.org/wiki/Special:FilePath/Container_ship_Essen_Express.jpg?width=400',
+  'Cargo':       'https://en.wikipedia.org/wiki/Special:FilePath/Cargo_ship.jpg?width=400',
+};
+// ─── Wikipedia article & channel source links ─────────────────────────────────
+const AIRCRAFT_WIKI = {
+  'C-17A':        'https://en.wikipedia.org/wiki/Boeing_C-17_Globemaster_III',
+  'KC-135R':      'https://en.wikipedia.org/wiki/Boeing_KC-135_Stratotanker',
+  'E-3 Sentry':   'https://en.wikipedia.org/wiki/Boeing_E-3_Sentry',
+  'P-8A Poseidon':'https://en.wikipedia.org/wiki/Boeing_P-8_Poseidon',
+  'F-35I Adir':   'https://en.wikipedia.org/wiki/Lockheed_Martin_F-35_Lightning_II',
+  'KC-46A':       'https://en.wikipedia.org/wiki/Boeing_KC-46_Pegasus',
+  'FA-18F':       'https://en.wikipedia.org/wiki/Boeing_F/A-18E/F_Super_Hornet',
+  'MQ-9 Reaper':  'https://en.wikipedia.org/wiki/General_Atomics_MQ-9_Reaper',
+  'B-52H':        'https://en.wikipedia.org/wiki/Boeing_B-52_Stratofortress',
+  'RQ-4 Global':  'https://en.wikipedia.org/wiki/Northrop_Grumman_RQ-4_Global_Hawk',
+};
+const VESSEL_WIKI = {
+  'Carrier CSG': 'https://en.wikipedia.org/wiki/USS_Gerald_R._Ford',
+  'DDG':         'https://en.wikipedia.org/wiki/Arleigh_Burke-class_destroyer',
+  'VLCC':        'https://en.wikipedia.org/wiki/Very_large_crude_carrier',
+  'LNG Carrier': 'https://en.wikipedia.org/wiki/LNG_carrier',
+  'Container':   'https://en.wikipedia.org/wiki/Container_ship',
+  'Cargo':       'https://en.wikipedia.org/wiki/Cargo_ship',
+};
+const CHANNEL_LINKS = {
+  '@IDFSpokesperson': 'https://t.me/idfspokesperson',
+  '@IRNA_NEWS':       'https://t.me/irna_news',
+  '@CENTCOMNews':     'https://x.com/CENTCOM',
+  '@OSINTdefender':   'https://x.com/OSINTdefender',
+  '@IntelDoge':       'https://x.com/IntelDoge',
+  '@HouthiMilSpo':    'https://t.me/houthimilspokesman',
 };
 
 // ─── Base events (always shown; /api/events overlays live data on top) ────────
@@ -844,6 +873,22 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
   const fmtDate = (tz) => new Intl.DateTimeFormat('en-US',{month:'short',day:'2-digit',timeZone:tz}).format(time).toUpperCase();
 
   // DetailModal renderer
+  const linkBtn = (href,label) => (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+       style={{display:"inline-flex",alignItems:"center",gap:4,background:"#0a1520",border:"1px solid #2a4060",
+               color:"#7dd3fc",padding:"4px 10px",fontSize:9,fontFamily:"'Share Tech Mono',monospace",
+               letterSpacing:1.5,textDecoration:"none",textTransform:"uppercase",cursor:"pointer"}}>
+      {label}
+    </a>
+  );
+  const ImgBox = ({src,placeholder}) => (
+    <div style={{height:180,background:"#06101a",position:"relative",display:"flex",alignItems:"center",
+                 justifyContent:"center",flexDirection:"column",gap:6,flexShrink:0,overflow:"hidden"}}>
+      <span style={{fontSize:52,opacity:.12,userSelect:"none"}}>{placeholder}</span>
+      {src && <img src={src} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}
+        onError={e=>{e.target.style.display='none'}}/>}
+    </div>
+  );
   const DetailModal = () => {
     if(!modalData) return null;
     const {type, data} = modalData;
@@ -851,6 +896,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
     let content = null;
     if(type==='aircraft') {
       const imgSrc = AIRCRAFT_IMG[data.type] || AIRCRAFT_IMG[Object.keys(AIRCRAFT_IMG).find(k=>data.type.startsWith(k))] || null;
+      const wikiUrl = AIRCRAFT_WIKI[data.type] || AIRCRAFT_WIKI[Object.keys(AIRCRAFT_WIKI).find(k=>data.type.startsWith(k))] || null;
       const missionNote = {Strike:"Conducting active strike operations in theater.",Tanker:"Aerial refueling support for strike packages.",AWACS:"Command and control / battle management coverage.",ISR:"Intelligence, surveillance, and reconnaissance ops.",Transport:"Strategic airlift and logistics support.",Maritime:"Maritime patrol and anti-submarine operations."}[data.role]||"";
       const nationFlag = {US:"🇺🇸",IL:"🇮🇱"}[data.nation]||"";
       content = (
@@ -862,7 +908,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             </div>
             <span style={{background:"#0d1929",border:"1px solid #3b82f6",color:"#3b82f6",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>{data.nation} AIR</span>
           </div>
-          {imgSrc && <img src={imgSrc} alt={data.type} onError={e=>{e.target.style.display='none'}} style={{width:"100%",height:180,objectFit:"cover",display:"block",background:"#050a0f"}}/>}
+          <ImgBox src={imgSrc} placeholder="✈"/>
           <div style={{padding:"12px 14px"}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
               {[["ALTITUDE",data.alt?.toLocaleString()+"ft"],["HEADING",data.hdg+"°"],["SPEED",data.spd+"kt"]].map(([l,v])=>(
@@ -872,12 +918,17 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                 </div>
               ))}
             </div>
-            {missionNote && <div style={{background:"#08111a",border:"1px solid #1e3a2a",color:"#86efac",padding:"8px 10px",fontSize:11,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5,letterSpacing:.5}}>▸ {missionNote}</div>}
+            {missionNote && <div style={{background:"#08111a",border:"1px solid #1e3a2a",color:"#86efac",padding:"8px 10px",fontSize:11,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5,letterSpacing:.5,marginBottom:10}}>▸ {missionNote}</div>}
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {wikiUrl && linkBtn(wikiUrl,"📖 Wikipedia")}
+              {linkBtn(`https://x.com/search?q=${encodeURIComponent(data.type+' USAF 2026')}`,"𝕏 Search X")}
+            </div>
           </div>
         </div>
       );
     } else if(type==='ship') {
       const imgSrc = VESSEL_IMG[data.type] || null;
+      const wikiUrl = VESSEL_WIKI[data.type] || null;
       const flagMap={US:"🇺🇸",SG:"🇸🇬",NO:"🇳🇴",GR:"🇬🇷",JP:"🇯🇵",KR:"🇰🇷",IR:"🇮🇷"};
       const stColor=STATUS_COLOR[data.status]||"#94a3b8";
       content = (
@@ -889,14 +940,18 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             </div>
             <span style={{background:"#070b10",border:`1px solid ${stColor}`,color:stColor,padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>{data.status?.toUpperCase()}</span>
           </div>
-          {imgSrc && <img src={imgSrc} alt={data.type} onError={e=>{e.target.style.display='none'}} style={{width:"100%",height:180,objectFit:"cover",display:"block",background:"#050a0f"}}/>}
+          <ImgBox src={imgSrc} placeholder="⛴"/>
           <div style={{padding:"12px 14px"}}>
             <div style={{background:"#08111a",border:"1px solid #1e2d3d",padding:"10px",marginBottom:8}}>
               <div style={{fontSize:10,color:"#8b9eb5",letterSpacing:1,marginBottom:4}}>CURRENT ROUTING</div>
               <div style={{fontSize:13,color:"#e2e8f0",fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5}}>{data.dest}</div>
             </div>
-            <div style={{background:"#08111a",border:"1px solid #1e3a4a",color:"#7dd3fc",padding:"8px 10px",fontSize:11,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5,letterSpacing:.5}}>
-              ▸ Strait of Hormuz remains CLOSED to commercial traffic since Day 3 of the conflict. All non-Iranian commercial vessels rerouting via Cape of Good Hope (+12 days transit).
+            <div style={{background:"#08111a",border:"1px solid #1e3a4a",color:"#7dd3fc",padding:"8px 10px",fontSize:11,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5,letterSpacing:.5,marginBottom:10}}>
+              ▸ Strait of Hormuz CLOSED since Day 3. Non-Iranian vessels rerouting Cape of Good Hope (+12 days transit).
+            </div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {wikiUrl && linkBtn(wikiUrl,"📖 Wikipedia")}
+              {linkBtn(`https://www.marinetraffic.com/en/ais/home/centerx:56/centery:25/zoom:7`,"🗺 MarineTraffic")}
             </div>
           </div>
         </div>
@@ -904,6 +959,9 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
     } else if(type==='event') {
       const cfg=TYPE_CFG[data.type]||{color:"#94a3b8",label:"Event",icon:"●"};
       const ccfg=CONF_CFG[data.confidence]||{color:"#94a3b8",label:data.confidence};
+      const desc=(data.desc||'').toLowerCase();
+      const hasXRef=desc.includes('on x')||desc.includes('twitter')||desc.includes('circulating');
+      const newsQ=encodeURIComponent(data.title+' iran 2026');
       content = (
         <div>
           <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d"}}>
@@ -917,16 +975,24 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
           </div>
           <div style={{padding:"12px 14px"}}>
             <div style={{fontSize:12,color:"#c8dae8",lineHeight:1.7,marginBottom:10}}>{data.desc}</div>
-            {data.verified && <div style={{display:"flex",alignItems:"center",gap:6,background:"#081a10",border:"1px solid #1e4a2a",padding:"6px 10px"}}>
+            {data.verified && <div style={{display:"flex",alignItems:"center",gap:6,background:"#081a10",border:"1px solid #1e4a2a",padding:"6px 10px",marginBottom:10}}>
               <span style={{color:"#22c55e",fontSize:14}}>✓</span>
               <span style={{fontSize:10,color:"#86efac",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>OSINT VERIFIED — Multiple independent sources confirmed</span>
             </div>}
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {linkBtn(`https://news.google.com/search?q=${newsQ}`,"🗞 Google News")}
+              {data.type==='us_il' && linkBtn('https://www.understandingwar.org/backgrounder/iran-update',"📊 ISW Report")}
+              {hasXRef && linkBtn(`https://x.com/search?q=${newsQ}`,"𝕏 Search X")}
+            </div>
           </div>
         </div>
       );
     } else if(type==='osint') {
       const chColor=tgColor(data.channel);
       const nation=tgNation(data.channel);
+      const chUrl=CHANNEL_LINKS[data.channel]||null;
+      const hasVideo=/(on x|on twitter|video|footage|circulating)/i.test(data.text||'');
+      const xQ=encodeURIComponent((data.text||'').slice(0,80));
       content = (
         <div>
           <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -944,9 +1010,11 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
           </div>
           <div style={{padding:"12px 14px"}}>
             <div style={{fontSize:13,color:"#e2e8f0",lineHeight:1.8,marginBottom:10,fontFamily:"'Share Tech Mono',monospace",background:"#080e14",padding:"10px",border:"1px solid #1e2d3d"}}>{data.text}</div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span style={{fontSize:10,color:"#8b9eb5",fontFamily:"'Share Tech Mono',monospace"}}>👁 {(data.views||0).toLocaleString()} views</span>
-              <span style={{fontSize:9,color:"#4a6070",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>SOURCE: {data.channel}</span>
+            <div style={{fontSize:9,color:"#6080a0",fontFamily:"'Share Tech Mono',monospace",marginBottom:10}}>👁 {(data.views||0).toLocaleString()} views</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {chUrl && linkBtn(chUrl,"📡 Open Channel")}
+              {hasVideo && linkBtn(`https://x.com/search?q=${xQ}`,"𝕏 Search Video on X")}
+              {linkBtn(`https://news.google.com/search?q=${encodeURIComponent((data.text||'').slice(0,60)+' iran 2026')}`,"🗞 Google News")}
             </div>
           </div>
         </div>
