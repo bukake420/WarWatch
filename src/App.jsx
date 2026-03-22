@@ -625,7 +625,7 @@ export default function WarWatch() {
 
   const genSitrep=async()=>{
     setSitLoad(true);setTab("sitrep");
-    const ev=EVENTS.filter(e=>Math.floor((new Date(e.date)-WAR_START)/86400000)<=tDay).map(e=>`[${e.date}] ${e.title}: ${e.desc}`).join("\n");
+    const ev=events.filter(e=>Math.floor((new Date(e.date)-WAR_START)/86400000)<=tDay).map(e=>`[${e.date}] ${e.title}: ${e.desc}`).join("\n");
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system:"You are a senior OSINT analyst at ISW/CTP. Write professional military situation reports. No preamble.",messages:[{role:"user",content:`Situation report: 2026 Iran War — Day ${tDay+1} (${dayToDate(tDay)}).\n\nOSINT:\n${ev}\n\nFormat:\nEXECUTIVE SUMMARY\n[2-3 sentences]\n\nKEY DEVELOPMENTS — LAST 24H\n[5-7 bullets]\n\nSTRATEGIC ASSESSMENT\n[Campaign trajectory, degradation, escalation]\n\nCRITICAL INDICATORS\n[3-4 items]\n\nMax 450 words.`}]})});
       if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
@@ -1229,7 +1229,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
           </div>
           <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:"#7090a8",whiteSpace:"nowrap",flexShrink:0,textAlign:"right"}}>
             <div style={{color:"#3b82f6"}}>{filteredEvents.length} events</div>
-            <div>of {EVENTS.length} total</div>
+            <div>of {events.length} total</div>
           </div>
         </div>
       </div>
