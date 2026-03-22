@@ -199,7 +199,7 @@ const STATS_DATA = [
 const dayToDate = d => { const dt=new Date(WAR_START); dt.setDate(dt.getDate()+d); return dt.toLocaleDateString("en-US",{month:"short",day:"numeric"}); };
 const moveAC = ac => {
   const r=ac.hdg*Math.PI/180;
-  let lat=ac.lat+Math.cos(r)*0.025,lng=ac.lng+Math.sin(r)*0.025,hdg=ac.hdg;
+  let lat=ac.lat+Math.cos(r)*0.06,lng=ac.lng+Math.sin(r)*0.06,hdg=ac.hdg;
   if(lat>44||lat<18){lat=ac.lat;hdg=(hdg+180)%360;}
   if(lng>74||lng<30){lng=ac.lng;hdg=(hdg+180)%360;}
   return{...ac,lat,lng,hdg};
@@ -687,9 +687,21 @@ export default function WarWatch() {
   useEffect(()=>{
     if(!mapReady) return;
     const t=setInterval(()=>{
-      acData.current=acData.current.map(ac=>{const u=moveAC(ac);if(aircraftMk.current[ac.id])aircraftMk.current[ac.id].setLatLng([u.lat,u.lng]);return u;});
+      const L=window.L;
+      acData.current=acData.current.map(ac=>{
+        const u=moveAC(ac);
+        const mk=aircraftMk.current[ac.id];
+        if(mk){
+          mk.setLatLng([u.lat,u.lng]);
+          if(L && u.hdg!==ac.hdg){
+            const col=ROLE_COLOR[u.role]||"#94a3b8";
+            mk.setIcon(L.divIcon({className:"",html:`<div style="transform:rotate(${u.hdg}deg);color:${col};font-size:13px;filter:drop-shadow(0 0 4px ${col})">✈</div>`,iconSize:[14,14],iconAnchor:[7,7]}));
+          }
+        }
+        return u;
+      });
       setAcList([...acData.current]);
-    },4000);
+    },2000);
     return()=>clearInterval(t);
   },[mapReady]);
 
