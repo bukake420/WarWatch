@@ -135,20 +135,13 @@ const SIM_SCENES = [
   { type:"title",  day:21, duration:11000, title:"THE COST", subtitle:"1,400+ killed in Iran · 18,000+ injured · 3M+ displaced\nStrait of Hormuz closed · Brent crude at $127\nNATO called 'cowards' by Trump", narrative:"", clearMap:true },
 ];
 
-const AIRCRAFT_BASE = [
-  { id:"RCH101", callsign:"RCH101",  type:"C-17A",        role:"Transport", nation:"US", lat:26.26,lng:50.60,alt:35000,hdg:315,spd:480 },
-  { id:"RAKE21", callsign:"RAKE21",  type:"KC-135R",      role:"Tanker",    nation:"US", lat:29.10,lng:55.20,alt:31000,hdg:260,spd:450 },
-  { id:"SNTRY1", callsign:"SNTRY01", type:"E-3 Sentry",   role:"AWACS",     nation:"US", lat:28.50,lng:48.30,alt:29000,hdg:175,spd:400 },
-  { id:"POSD01", callsign:"POSD01",  type:"P-8A Poseidon", role:"Maritime",  nation:"US", lat:24.80,lng:58.50,alt:25000,hdg:95, spd:370 },
-  { id:"IAF401", callsign:"IAF401",  type:"F-35I Adir",   role:"Strike",    nation:"IL", lat:32.10,lng:38.00,alt:40000,hdg:65, spd:550 },
-  { id:"IAF402", callsign:"IAF402",  type:"F-35I Adir",   role:"Strike",    nation:"IL", lat:32.50,lng:39.20,alt:40000,hdg:62, spd:550 },
-  { id:"REACH77",callsign:"REACH77", type:"KC-46A",       role:"Tanker",    nation:"US", lat:27.30,lng:52.10,alt:30000,hdg:200,spd:440 },
-  { id:"USN201", callsign:"USN201",  type:"FA-18F",       role:"Strike",    nation:"US", lat:23.50,lng:60.20,alt:22000,hdg:315,spd:520 },
-  { id:"COBRA1", callsign:"COBRA01", type:"MQ-9 Reaper",  role:"ISR",       nation:"US", lat:31.20,lng:45.80,alt:15000,hdg:88, spd:220 },
-  { id:"COBRA2", callsign:"COBRA02", type:"MQ-9 Reaper",  role:"ISR",       nation:"US", lat:33.10,lng:47.20,alt:14000,hdg:272,spd:220 },
-  { id:"SAC201", callsign:"SAC201",  type:"B-52H",        role:"Strike",    nation:"US", lat:21.30,lng:68.40,alt:40000,hdg:315,spd:500 },
-  { id:"GULL11", callsign:"GULL11",  type:"RQ-4 Global",  role:"ISR",       nation:"US", lat:30.50,lng:54.20,alt:60000,hdg:355,spd:360 },
-];
+const COUNTRY_COLOR = {
+  "United States":"#3b82f6","Israel":"#22c55e","Iran":"#ef4444",
+  "United Arab Emirates":"#f59e0b","Saudi Arabia":"#f59e0b",
+  "Qatar":"#a855f7","Turkey":"#06b6d4","India":"#f97316",
+  "Pakistan":"#84cc16","Egypt":"#f59e0b","Iraq":"#ef4444",
+};
+const acColor = ac => COUNTRY_COLOR[ac.country] || "#94a3b8";
 
 const VESSELS = [
   { id:"mv1",name:"BW AMAZON",    type:"VLCC",       flag:"SG",status:"diverted",lat:22.50,lng:60.80,dest:"Cape of Good Hope reroute" },
@@ -172,7 +165,6 @@ const CONF_CFG = {
   reported:   { color:"#f59e0b", label:"REPORTED" },
   unverified: { color:"#ef4444", label:"UNVERIFIED" },
 };
-const ROLE_COLOR = { Strike:"#ef4444",Tanker:"#22c55e",AWACS:"#a855f7",ISR:"#f59e0b",Transport:"#60a5fa",Maritime:"#06b6d4" };
 const STATUS_COLOR = { diverted:"#f59e0b",waiting:"#60a5fa",blocked:"#ef4444",active:"#22c55e" };
 const WAR_START = new Date("2026-02-28");
 const MAX_DAY = 23;
@@ -198,11 +190,10 @@ const STATS_DATA = [
 
 const dayToDate = d => { const dt=new Date(WAR_START); dt.setDate(dt.getDate()+d); return dt.toLocaleDateString("en-US",{month:"short",day:"numeric"}); };
 const moveAC = ac => {
+  if(!ac.spd||!ac.hdg) return ac;
   const r=ac.hdg*Math.PI/180;
-  let lat=ac.lat+Math.cos(r)*0.025,lng=ac.lng+Math.sin(r)*0.025,hdg=ac.hdg;
-  if(lat>44||lat<18){lat=ac.lat;hdg=(hdg+180)%360;}
-  if(lng>74||lng<30){lng=ac.lng;hdg=(hdg+180)%360;}
-  return{...ac,lat,lng,hdg};
+  const step=(ac.spd/1.94384)/111111*2; // knots→m/s→degrees per 2-sec tick
+  return{...ac,lat:ac.lat+Math.cos(r)*step,lng:ac.lng+Math.sin(r)*step};
 };
 
 function Spinner({color="#3b82f6",label="LOADING"}){
@@ -548,7 +539,7 @@ export default function WarWatch() {
   const strikeMk   = useRef([]);
   const aircraftMk = useRef({});
   const shipMk     = useRef([]);
-  const acData     = useRef(AIRCRAFT_BASE.map(a=>({...a})));
+  const acData     = useRef([]);
 
   const [time,       setTime]       = useState(new Date());
   const [tab,        setTab]        = useState("events");
@@ -572,7 +563,8 @@ export default function WarWatch() {
   const [tgMoreLoad, setTgMoreLoad] = useState(false);
   const [tgDayOffset, setTgDayOffset] = useState(0);
   const [mapReady,   setMapReady]   = useState(false);
-  const [acList,     setAcList]     = useState(AIRCRAFT_BASE);
+  const [acList,     setAcList]     = useState([]);
+  const [acFetchKey, setAcFetchKey] = useState(0);
   const [simMode,    setSimMode]    = useState(false);
   const [newAlert,   setNewAlert]   = useState(false);
   const [satellite,  setSatellite]  = useState(false);
@@ -673,26 +665,57 @@ export default function WarWatch() {
     });
   },[mapReady,filteredEvents,layers.strikes]);
 
+  // Fetch live aircraft from OpenSky Network proxy (refreshes every 5 min)
+  useEffect(()=>{
+    if(!mapReady) return;
+    const load=()=>{
+      fetch('/api/aircraft')
+        .then(r=>r.json())
+        .then(d=>{
+          if(!Array.isArray(d.aircraft)||d.aircraft.length===0) return;
+          acData.current=d.aircraft;
+          setAcList([...d.aircraft]);
+          setAcFetchKey(k=>k+1);
+        })
+        .catch(()=>{});
+    };
+    load();
+    const t=setInterval(load,300_000);
+    return()=>clearInterval(t);
+  },[mapReady]);
+
   useEffect(()=>{
     if(!mapReady||!window.L||!lMap.current) return;
     const L=window.L,map=lMap.current;
     Object.values(aircraftMk.current).forEach(m=>m.remove());aircraftMk.current={};
     if(!layers.aircraft) return;
     acData.current.forEach(ac=>{
-      const col=ROLE_COLOR[ac.role]||"#94a3b8";
+      const col=acColor(ac);
       const icon=L.divIcon({className:"",html:`<div style="transform:rotate(${ac.hdg}deg);color:${col};font-size:13px;filter:drop-shadow(0 0 4px ${col})">✈</div>`,iconSize:[14,14],iconAnchor:[7,7]});
       const m=L.marker([ac.lat,ac.lng],{icon,zIndexOffset:1000});
       m.on('click',()=>setModalData({type:'aircraft',data:{...ac}}));
       m.addTo(map);aircraftMk.current[ac.id]=m;
     });
-  },[mapReady,layers.aircraft]);
+  },[mapReady,layers.aircraft,acFetchKey]);
 
   useEffect(()=>{
     if(!mapReady) return;
     const t=setInterval(()=>{
-      acData.current=acData.current.map(ac=>{const u=moveAC(ac);if(aircraftMk.current[ac.id])aircraftMk.current[ac.id].setLatLng([u.lat,u.lng]);return u;});
+      const L=window.L;
+      acData.current=acData.current.map(ac=>{
+        const u=moveAC(ac);
+        const mk=aircraftMk.current[ac.id];
+        if(mk){
+          mk.setLatLng([u.lat,u.lng]);
+          if(L && u.hdg!==ac.hdg){
+            const col=acColor(u);
+            mk.setIcon(L.divIcon({className:"",html:`<div style="transform:rotate(${u.hdg}deg);color:${col};font-size:13px;filter:drop-shadow(0 0 4px ${col})">✈</div>`,iconSize:[14,14],iconAnchor:[7,7]}));
+          }
+        }
+        return u;
+      });
       setAcList([...acData.current]);
-    },4000);
+    },2000);
     return()=>clearInterval(t);
   },[mapReady]);
 
@@ -955,31 +978,34 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
     const close = ()=>setModalData(null);
     let content = null;
     if(type==='aircraft') {
-      const wikiUrl = AIRCRAFT_WIKI[data.type] || AIRCRAFT_WIKI[Object.keys(AIRCRAFT_WIKI).find(k=>data.type.startsWith(k))] || null;
-      const missionNote = {Strike:"Conducting active strike operations in theater.",Tanker:"Aerial refueling support for strike packages.",AWACS:"Command and control / battle management coverage.",ISR:"Intelligence, surveillance, and reconnaissance ops.",Transport:"Strategic airlift and logistics support.",Maritime:"Maritime patrol and anti-submarine operations."}[data.role]||"";
-      const nationFlag = {US:"🇺🇸",IL:"🇮🇱"}[data.nation]||"";
+      const col = acColor(data);
+      const vrateLabel = data.vrate > 1 ? "▲ CLIMBING" : data.vrate < -1 ? "▼ DESCENDING" : "→ LEVEL";
       content = (
         <div>
           <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
-              <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:700,color:"#60a5fa",letterSpacing:2}}>{data.callsign}</div>
-              <div style={{fontSize:11,color:"#8b9eb5",letterSpacing:1,marginTop:2}}>{nationFlag} {data.type} · {data.role}</div>
+              <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:700,color:col,letterSpacing:2}}>{data.callsign}</div>
+              <div style={{fontSize:11,color:"#8b9eb5",letterSpacing:1,marginTop:2}}>{data.country}</div>
             </div>
-            <span style={{background:"#0d1929",border:"1px solid #3b82f6",color:"#3b82f6",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>{data.nation} AIR</span>
+            <span style={{background:"#0a1520",border:`1px solid ${col}`,color:col,padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>ADS-B LIVE</span>
           </div>
-          {oEmbedHtml ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/> : <ImgBox src={fetchedImg} placeholder="✈"/>}
+          <ImgBox src={null} placeholder="✈"/>
           <div style={{padding:"12px 14px"}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
-              {[["ALTITUDE",data.alt?.toLocaleString()+"ft"],["HEADING",data.hdg+"°"],["SPEED",data.spd+"kt"]].map(([l,v])=>(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:10}}>
+              {[
+                ["ALTITUDE", data.alt!=null ? data.alt.toLocaleString()+"ft" : "N/A"],
+                ["HEADING",  data.hdg+"°"],
+                ["SPEED",    data.spd!=null ? data.spd+"kt" : "N/A"],
+                ["VRATE",    vrateLabel],
+              ].map(([l,v])=>(
                 <div key={l} style={{background:"#0a1520",border:"1px solid #1e2d3d",padding:"6px 8px",textAlign:"center"}}>
-                  <div style={{fontFamily:"'Orbitron',monospace",fontSize:12,fontWeight:700,color:"#f8fafc"}}>{v}</div>
+                  <div style={{fontFamily:"'Orbitron',monospace",fontSize:11,fontWeight:700,color:"#f8fafc",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</div>
                   <div style={{fontSize:9,color:"#8b9eb5",letterSpacing:1,marginTop:2}}>{l}</div>
                 </div>
               ))}
             </div>
-            {missionNote && <div style={{background:"#08111a",border:"1px solid #1e3a2a",color:"#86efac",padding:"8px 10px",fontSize:11,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5,letterSpacing:.5,marginBottom:10}}>▸ {missionNote}</div>}
-            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {wikiUrl && linkBtn(wikiUrl,"📖 Wikipedia")}
+            <div style={{background:"#08111a",border:"1px solid #1a2d3a",color:"#8ba8bc",padding:"8px 10px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.6,letterSpacing:.5}}>
+              Live position via <span style={{color:"#60a5fa"}}>OpenSky Network</span> ADS-B feed · updated every 5 min
             </div>
           </div>
         </div>
@@ -1513,19 +1539,21 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                   <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>TRACKING {acList.length} AIRCRAFT</span>
                   <div className="scan" style={{width:7,height:7,borderRadius:"50%",background:"#22c55e"}}/>
                 </div>
+                {acList.length===0 && (
+                  <div style={{padding:"20px 11px",textAlign:"center",color:"#3a5060",fontSize:11,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>LOADING ADS-B FEED...</div>
+                )}
                 {acList.map(ac=>{
-                  const col=ROLE_COLOR[ac.role]||"#94a3b8";
+                  const col=acColor(ac);
                   return (
                     <div key={ac.id} className="erow" style={{padding:"7px 11px",borderBottom:"1px solid #090f19"}}
                       onClick={()=>{if(lMap.current)lMap.current.setView([ac.lat,ac.lng],8,{animate:true});}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                        <span style={{fontSize:11,color:col,fontFamily:"'Share Tech Mono',monospace",fontWeight:700}}>{ac.nation==="US"?"🇺🇸":"🇮🇱"} {ac.callsign}</span>
-                        <span style={{fontSize:9,color:col,textTransform:"uppercase",letterSpacing:1,fontFamily:"'Share Tech Mono',monospace"}}>{ac.role}</span>
+                        <span style={{fontSize:11,color:col,fontFamily:"'Share Tech Mono',monospace",fontWeight:700}}>{ac.callsign}</span>
+                        <span style={{fontSize:9,color:"#3a5060",textTransform:"uppercase",letterSpacing:1,fontFamily:"'Share Tech Mono',monospace"}}>{ac.country}</span>
                       </div>
-                      <div style={{fontSize:11,color:"#8aa8bc",fontFamily:"'Share Tech Mono',monospace"}}>{ac.type}</div>
                       <div style={{display:"flex",gap:10,marginTop:2}}>
-                        <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace"}}>FL{Math.floor(ac.alt/100)}</span>
-                        <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace"}}>{ac.spd}kt</span>
+                        <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace"}}>{ac.alt!=null?`FL${Math.floor(ac.alt/100)}`:"—"}</span>
+                        <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace"}}>{ac.spd!=null?`${ac.spd}kt`:"—"}</span>
                         <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace"}}>{ac.hdg}°</span>
                       </div>
                     </div>
