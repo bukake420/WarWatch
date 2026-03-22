@@ -260,7 +260,7 @@ function WarSimulation({ onClose }) {
     simMarkers.current = simMarkers.current.filter(({sceneIdx})=>sceneIdx>=currentIdx-1);
   },[]);
 
-  const animateLine = useCallback((L,map,from,to,color,durationMs,sceneIdx,targetCity)=>{
+  const animateLine = useCallback((L,map,from,to,color,durationMs,sceneIdx,targetCity,icon)=>{
     // Complete the arc in 40% of scene duration so it finishes well before the scene ends
     const steps=55, interval=(durationMs*0.40)/steps;
     // Push arc midpoint well NORTH — keeps the line out of the bottom 30% of screen
@@ -272,7 +272,7 @@ function WarSimulation({ onClose }) {
     const midLng = (from[1]+to[1])/2;
     const line=L.polyline([],{color,weight:2.5,opacity:0.9,dashArray:"8,5"}).addTo(map);
     simLines.current.push({layer:line,sceneIdx});
-    const animIcon=L.divIcon({className:"",html:`<div style="color:${color};font-size:16px;filter:drop-shadow(0 0 8px ${color});animation:pulse 0.5s ease-in-out infinite">●</div>`,iconSize:[16,16],iconAnchor:[8,8]});
+    const animIcon=L.divIcon({className:"",html:icon?`<div style="font-size:18px;filter:drop-shadow(0 0 8px ${color})">${icon}</div>`:`<div style="color:${color};font-size:16px;filter:drop-shadow(0 0 8px ${color});animation:pulse 0.5s ease-in-out infinite">●</div>`,iconSize:[20,20],iconAnchor:[10,10]});
     let animMarker=null, step=0;
     const points=[];
     const timer=setInterval(()=>{
@@ -355,10 +355,7 @@ function WarSimulation({ onClose }) {
       const midLat=(scene.origin[0]+scene.target[0])/2 + 3;
       const midLng=(scene.origin[1]+scene.target[1])/2;
       map.flyTo([midLat,midLng],5,{duration:1.2/speedRef.current,easeLinearity:0.5});
-      const oIcon=L.divIcon({className:"",html:`<div style="color:${scene.color};font-size:15px;filter:drop-shadow(0 0 6px ${scene.color})">${scene.icon}</div>`,iconSize:[15,15],iconAnchor:[7,7]});
-      const om=L.marker(scene.origin,{icon:oIcon,zIndexOffset:1500}).addTo(map);
-      simMarkers.current.push({layer:om,sceneIdx:idx});
-      setTimeout(()=>{ if(simLMap.current) animateLine(L,map,scene.origin,scene.target,scene.color,dur*0.8,idx,scene.targetCity); },700/speedRef.current);
+      setTimeout(()=>{ if(simLMap.current) animateLine(L,map,scene.origin,scene.target,scene.color,dur*0.8,idx,scene.targetCity,scene.icon); },700/speedRef.current);
       timeoutRef.current=setTimeout(advance,dur);
     }
   },[addImpactMarker,animateLine,fadeOldLayers,sceneDuration]);
