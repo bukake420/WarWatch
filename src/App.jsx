@@ -48,25 +48,25 @@ const SIM_SCENES = [
   { type:"title",  day:0,  duration:11000, title:"OPERATION EPIC FURY", subtitle:"Iran War 2026 — A Visual Timeline", narrative:"" },
   { type:"title",  day:0,  duration:9000,  title:"February 27, 2026", subtitle:"Oman's FM announces breakthrough in nuclear talks. Peace \"within reach.\"", narrative:"" },
   { type:"title",  day:1,  duration:7000,  title:"DAY 1 — February 28, 2026", subtitle:"02:00 UTC · Joint US-Israeli strikes begin", narrative:"" },
-  { type:"strike", day:1,  duration:14000, origin:[23.5,62.0],  target:[33.7244,51.7252], label:"US Navy Tomahawks → Natanz", icon:"🚀", color:"#3b82f6", narrative:"Tomahawk cruise missiles launch from USN destroyers in the Arabian Sea. First strike package targets Natanz uranium enrichment facility — home to 460kg of 60% enriched uranium." },
-  { type:"strike", day:1,  duration:14000, origin:[31.5,34.5],  target:[35.7500,51.4200], label:"IAF F-35I → Khamenei Compound", icon:"✈", color:"#60a5fa", narrative:"Israeli Air Force F-35I Adir fighters cross into Iranian airspace. Supreme Leader Ali Khamenei is killed in his compound. Iranian state media goes silent for 47 minutes." },
-  { type:"impact", day:1,  duration:10000, lat:35.7500, lng:51.4200, label:"☠ KHAMENEI KILLED", color:"#a855f7", narrative:"IRIB and Fars News confirm Khamenei's death. Trump announces the news on Truth Social. Iran's command structure begins to fracture." },
-  { type:"strike", day:1,  duration:12000, origin:[31.5,34.5],  target:[32.6546,51.6680], label:"IAF → Isfahan Air Defense", icon:"✈", color:"#3b82f6", narrative:"Simultaneous strikes hit nuclear-adjacent military facilities near Isfahan. US GBU-57 bunker-buster bombs penetrate hardened underground sites." },
-  { type:"strike", day:1,  duration:12000, origin:[34.5,49.0],  target:[31.7517,34.9896], label:"IRGC → Beit Shemesh", icon:"⚡", color:"#ef4444", narrative:"Iran fires hundreds of ballistic missiles toward Israel. Arrow, David's Sling, and Iron Dome activate. One missile breaks through — killing 9 civilians in Beit Shemesh." },
-  { type:"impact", day:1,  duration:10000, lat:31.7517, lng:34.9896, label:"💥 9 KILLED", color:"#ef4444", narrative:"Deadliest Iranian strike on Israeli soil. A residential neighborhood in Beit Shemesh is hit. Nine civilians killed. Hundreds shelter in safe rooms across Israel." },
+  { type:"strike", day:1,  duration:14000, origin:[23.5,62.0],  target:[33.7244,51.7252], label:"US Navy Tomahawks → Natanz", icon:"🚀", color:"#3b82f6", targetCity:"NATANZ · IRAN", narrative:"Tomahawk cruise missiles launch from USN destroyers in the Arabian Sea. First strike package targets Natanz uranium enrichment facility — home to 460kg of 60% enriched uranium." },
+  { type:"strike", day:1,  duration:14000, origin:[31.5,34.5],  target:[35.7500,51.4200], label:"IAF F-35I → Khamenei Compound", icon:"✈", color:"#60a5fa", targetCity:"TEHRAN · IRAN", narrative:"Israeli Air Force F-35I Adir fighters cross into Iranian airspace. Supreme Leader Ali Khamenei is killed in his compound. Iranian state media goes silent for 47 minutes." },
+  { type:"impact", day:1,  duration:10000, lat:35.7500, lng:51.4200, label:"☠ KHAMENEI KILLED", color:"#a855f7", targetCity:"TEHRAN · IRAN", narrative:"IRIB and Fars News confirm Khamenei's death. Trump announces the news on Truth Social. Iran's command structure begins to fracture." },
+  { type:"strike", day:1,  duration:12000, origin:[31.5,34.5],  target:[32.6546,51.6680], label:"IAF → Isfahan Air Defense", icon:"✈", color:"#3b82f6", targetCity:"ISFAHAN · IRAN", narrative:"Simultaneous strikes hit nuclear-adjacent military facilities near Isfahan. US GBU-57 bunker-buster bombs penetrate hardened underground sites." },
+  { type:"strike", day:1,  duration:12000, origin:[34.5,49.0],  target:[31.7517,34.9896], label:"IRGC → Beit Shemesh", icon:"⚡", color:"#ef4444", targetCity:"BEIT SHEMESH · ISRAEL", narrative:"Iran fires hundreds of ballistic missiles toward Israel. Arrow, David's Sling, and Iron Dome activate. One missile breaks through — killing 9 civilians in Beit Shemesh." },
+  { type:"impact", day:1,  duration:10000, lat:31.7517, lng:34.9896, label:"💥 9 KILLED", color:"#ef4444", targetCity:"BEIT SHEMESH · ISRAEL", narrative:"Deadliest Iranian strike on Israeli soil. A residential neighborhood in Beit Shemesh is hit. Nine civilians killed. Hundreds shelter in safe rooms across Israel." },
   { type:"title",  day:2,  duration:6000,  title:"DAYS 2–3", subtitle:"Suppression of missile infrastructure", narrative:"" },
-  { type:"strike", day:2,  duration:13000, origin:[31.5,34.5],  target:[29.2569,50.3243], label:"IAF → Kharg Island", icon:"✈", color:"#3b82f6", narrative:"Kharg Island, handling 90% of Iran's oil exports, is struck. Fires burn for 36 hours. Iran's primary revenue source for its war effort is disrupted." },
-  { type:"strike", day:2,  duration:13000, origin:[23.5,62.0],  target:[34.3277,47.0650], label:"US PrSM → Missile Launchers", icon:"🚀", color:"#3b82f6", narrative:"The US deploys the Precision Strike Missile (PrSM) for the first time in combat. Systematic destruction of IRGC ballistic missile launch sites begins." },
-  { type:"strike", day:3,  duration:13000, origin:[31.5,34.5],  target:[38.0962,46.2738], label:"IAF → Tabriz Airbases", icon:"✈", color:"#3b82f6", narrative:"Multiple Tabriz airbases struck. Satellite imagery confirms 11 craters on the 2nd Artesh runway. IAF destroys three Iranian fighters attempting takeoff." },
+  { type:"strike", day:2,  duration:13000, origin:[31.5,34.5],  target:[29.2569,50.3243], label:"IAF → Kharg Island", icon:"✈", color:"#3b82f6", targetCity:"KHARG ISLAND · IRAN", narrative:"Kharg Island, handling 90% of Iran's oil exports, is struck. Fires burn for 36 hours. Iran's primary revenue source for its war effort is disrupted." },
+  { type:"strike", day:2,  duration:13000, origin:[23.5,62.0],  target:[34.3277,47.0650], label:"US PrSM → Missile Launchers", icon:"🚀", color:"#3b82f6", targetCity:"KERMANSHAH · IRAN", narrative:"The US deploys the Precision Strike Missile (PrSM) for the first time in combat. Systematic destruction of IRGC ballistic missile launch sites begins." },
+  { type:"strike", day:3,  duration:13000, origin:[31.5,34.5],  target:[38.0962,46.2738], label:"IAF → Tabriz Airbases", icon:"✈", color:"#3b82f6", targetCity:"TABRIZ · IRAN", narrative:"Multiple Tabriz airbases struck. Satellite imagery confirms 11 craters on the 2nd Artesh runway. IAF destroys three Iranian fighters attempting takeoff." },
   { type:"title",  day:10, duration:7000,  title:"DAY 10 — March 9", subtitle:"Humanitarian catastrophe deepens", narrative:"" },
-  { type:"impact", day:10, duration:13000, lat:27.1500, lng:57.0833, label:"💥 SCHOOL — 170+ DEAD", color:"#f59e0b", narrative:"A US airstrike hits an elementary girls' school in Minab, southeastern Iran. Over 170 people killed, most of them schoolchildren. Amnesty International later confirms US responsibility. The UN Secretary-General calls it a possible war crime." },
+  { type:"impact", day:10, duration:13000, lat:27.1500, lng:57.0833, label:"💥 SCHOOL — 170+ DEAD", color:"#f59e0b", targetCity:"MINAB · IRAN", narrative:"A US airstrike hits an elementary girls' school in Minab, southeastern Iran. Over 170 people killed, most of them schoolchildren. Amnesty International later confirms US responsibility. The UN Secretary-General calls it a possible war crime." },
   { type:"title",  day:17, duration:6000,  title:"DAY 17 — March 16", subtitle:"Energy infrastructure war begins", narrative:"" },
-  { type:"strike", day:17, duration:13000, origin:[31.5,34.5],  target:[27.1500,52.6000], label:"IAF → South Pars Gas Field", icon:"✈", color:"#3b82f6", narrative:"Israel strikes South Pars, the world's largest natural gas field. Global oil prices spike past $127/barrel. Iran warns of 'zero restraint' going forward." },
-  { type:"strike", day:17, duration:13000, origin:[34.5,49.0],  target:[25.9000,51.5500], label:"Iran → Ras Laffan Qatar", icon:"⚡", color:"#ef4444", narrative:"Iran retaliates by striking Qatar's massive LNG export hub. 13 of 14 ballistic missiles intercepted. The energy war spreads across the Gulf." },
+  { type:"strike", day:17, duration:13000, origin:[31.5,34.5],  target:[27.1500,52.6000], label:"IAF → South Pars Gas Field", icon:"✈", color:"#3b82f6", targetCity:"SOUTH PARS · IRAN", narrative:"Israel strikes South Pars, the world's largest natural gas field. Global oil prices spike past $127/barrel. Iran warns of 'zero restraint' going forward." },
+  { type:"strike", day:17, duration:13000, origin:[34.5,49.0],  target:[25.9000,51.5500], label:"Iran → Ras Laffan Qatar", icon:"⚡", color:"#ef4444", targetCity:"RAS LAFFAN · QATAR", narrative:"Iran retaliates by striking Qatar's massive LNG export hub. 13 of 14 ballistic missiles intercepted. The energy war spreads across the Gulf." },
   { type:"title",  day:18, duration:6000,  title:"DAY 18 — March 17", subtitle:"HVT strike: Larijani eliminated", narrative:"" },
-  { type:"strike", day:18, duration:12000, origin:[31.5,34.5],  target:[35.6892,51.3890], label:"IAF HVT → Larijani", icon:"✈", color:"#a855f7", narrative:"Israel assassinates Ali Larijani, Secretary of Iran's Supreme National Security Council. The IRGC announces it will no longer distinguish between military and civilian Israeli targets." },
-  { type:"impact", day:18, duration:9000,  lat:35.6892, lng:51.3890, label:"☠ LARIJANI ELIMINATED", color:"#a855f7", narrative:"Larijani's death deals a severe blow to Iran's strategic decision-making. Defense Minister Gallant posts on X: 'You are on our list.'" },
-  { type:"strike", day:19, duration:13000, origin:[34.5,49.0],  target:[32.7940,34.9896], label:"IRGC → Haifa Cluster Strike", icon:"⚡", color:"#ef4444", narrative:"Iran strikes Haifa with cluster munitions. Two elderly residents killed just outside their safe room. IRGC declares it 'revenge for Larijani.'" },
+  { type:"strike", day:18, duration:12000, origin:[31.5,34.5],  target:[35.6892,51.3890], label:"IAF HVT → Larijani", icon:"✈", color:"#a855f7", targetCity:"TEHRAN · IRAN", narrative:"Israel assassinates Ali Larijani, Secretary of Iran's Supreme National Security Council. The IRGC announces it will no longer distinguish between military and civilian Israeli targets." },
+  { type:"impact", day:18, duration:9000,  lat:35.6892, lng:51.3890, label:"☠ LARIJANI ELIMINATED", color:"#a855f7", targetCity:"TEHRAN · IRAN", narrative:"Larijani's death deals a severe blow to Iran's strategic decision-making. Defense Minister Gallant posts on X: 'You are on our list.'" },
+  { type:"strike", day:19, duration:13000, origin:[34.5,49.0],  target:[32.7940,34.9896], label:"IRGC → Haifa Cluster Strike", icon:"⚡", color:"#ef4444", targetCity:"HAIFA · ISRAEL", narrative:"Iran strikes Haifa with cluster munitions. Two elderly residents killed just outside their safe room. IRGC declares it 'revenge for Larijani.'" },
   { type:"title",  day:21, duration:9000,  title:"DAY 21 — March 20, 2026", subtitle:"War continues. No ceasefire in sight.", narrative:"", clearMap:true },
   { type:"stats",  day:21, duration:12000, narrative:"", clearMap:true },
   { type:"title",  day:21, duration:11000, title:"THE COST", subtitle:"1,400+ killed in Iran · 18,000+ injured · 3M+ displaced\nStrait of Hormuz closed · Brent crude at $127\nNATO called 'cowards' by Trump", narrative:"", clearMap:true },
@@ -182,7 +182,22 @@ function WarSimulation({ onClose }) {
     return Math.max(minDur, words * 420) / speedRef.current;
   },[]);
 
-  const animateLine = useCallback((L,map,from,to,color,durationMs)=>{
+  const fadeOldLayers = useCallback((currentIdx)=>{
+    simLines.current.forEach(({layer,sceneIdx})=>{
+      if(sceneIdx===currentIdx-1){ try{layer.setStyle({opacity:0.25,weight:1.2});}catch(e){} }
+      else if(sceneIdx<=currentIdx-2){ try{layer.remove();}catch(e){} }
+    });
+    simMarkers.current.forEach(({layer,sceneIdx})=>{
+      if(sceneIdx===currentIdx-1){
+        try{layer.setStyle({opacity:0.2,fillOpacity:0.04});}catch(e){}
+        try{const el=layer.getElement();if(el)el.style.opacity="0.2";}catch(e){}
+      } else if(sceneIdx<=currentIdx-2){ try{layer.remove();}catch(e){} }
+    });
+    simLines.current   = simLines.current.filter(({sceneIdx})=>sceneIdx>=currentIdx-1);
+    simMarkers.current = simMarkers.current.filter(({sceneIdx})=>sceneIdx>=currentIdx-1);
+  },[]);
+
+  const animateLine = useCallback((L,map,from,to,color,durationMs,sceneIdx,targetCity)=>{
     // Complete the arc in 40% of scene duration so it finishes well before the scene ends
     const steps=55, interval=(durationMs*0.40)/steps;
     // Push arc midpoint well NORTH — keeps the line out of the bottom 30% of screen
@@ -193,7 +208,7 @@ function WarSimulation({ onClose }) {
     const midLat = (from[0]+to[0])/2 + northPush;
     const midLng = (from[1]+to[1])/2;
     const line=L.polyline([],{color,weight:2.5,opacity:0.9,dashArray:"8,5"}).addTo(map);
-    simLines.current.push(line);
+    simLines.current.push({layer:line,sceneIdx});
     const animIcon=L.divIcon({className:"",html:`<div style="color:${color};font-size:16px;filter:drop-shadow(0 0 8px ${color});animation:pulse 0.5s ease-in-out infinite">●</div>`,iconSize:[16,16],iconAnchor:[8,8]});
     let animMarker=null, step=0;
     const points=[];
@@ -206,23 +221,29 @@ function WarSimulation({ onClose }) {
       points.push([lat,lng]);
       line.setLatLngs(points);
       if(animMarker) animMarker.setLatLng([lat,lng]);
-      else{ animMarker=L.marker([lat,lng],{icon:animIcon,zIndexOffset:2000}).addTo(map); simMarkers.current.push(animMarker); }
+      else{ animMarker=L.marker([lat,lng],{icon:animIcon,zIndexOffset:2000}).addTo(map); simMarkers.current.push({layer:animMarker,sceneIdx}); }
       if(step>=steps){
         clearInterval(timer);
-        if(animMarker){animMarker.remove();simMarkers.current=simMarkers.current.filter(m=>m!==animMarker);}
+        if(animMarker){animMarker.remove();simMarkers.current=simMarkers.current.filter(({layer})=>layer!==animMarker);}
         const b1=L.circleMarker(to,{radius:20,color,fillColor:color,fillOpacity:0.12,weight:2,opacity:0.7}).addTo(map);
         const b2=L.circleMarker(to,{radius:8, color,fillColor:color,fillOpacity:0.55,weight:2,opacity:1}).addTo(map);
-        simMarkers.current.push(b1,b2);
+        simMarkers.current.push({layer:b1,sceneIdx},{layer:b2,sceneIdx});
+        if(targetCity){
+          const cityIcon=L.divIcon({className:"",html:`<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#8ba8bc;letter-spacing:1.5px;white-space:nowrap;text-shadow:0 1px 4px #000;text-align:center;margin-top:28px">${targetCity}</div>`,iconSize:[120,18],iconAnchor:[60,-12]});
+          const cm=L.marker(to,{icon:cityIcon,zIndexOffset:1800}).addTo(map);
+          simMarkers.current.push({layer:cm,sceneIdx});
+        }
       }
     },interval);
   },[]);
 
-  const addImpactMarker = useCallback((L,map,lat,lng,label,color)=>{
+  const addImpactMarker = useCallback((L,map,lat,lng,label,color,sceneIdx,targetCity)=>{
     const parts=label.split(" ");
-    const icon=L.divIcon({className:"",html:`<div style="text-align:center"><div style="font-size:20px;filter:drop-shadow(0 0 10px ${color})">${parts[0]}</div><div style="color:${color};font-size:10px;font-family:'Share Tech Mono',monospace;white-space:nowrap;margin-top:3px;font-weight:700">${parts.slice(1).join(" ")}</div></div>`,iconSize:[100,36],iconAnchor:[50,18]});
+    const cityHtml=targetCity?`<div style="color:#8ba8bc;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;margin-top:5px;white-space:nowrap">${targetCity}</div>`:"";
+    const icon=L.divIcon({className:"",html:`<div style="text-align:center"><div style="font-size:20px;filter:drop-shadow(0 0 10px ${color})">${parts[0]}</div><div style="color:${color};font-size:10px;font-family:'Share Tech Mono',monospace;white-space:nowrap;margin-top:3px;font-weight:700">${parts.slice(1).join(" ")}</div>${cityHtml}</div>`,iconSize:[130,50],iconAnchor:[65,18]});
     const m=L.marker([lat,lng],{icon,zIndexOffset:3000}).addTo(map);
     const p=L.circleMarker([lat,lng],{radius:28,color,fillColor:color,fillOpacity:0.1,weight:2,opacity:0.6}).addTo(map);
-    simMarkers.current.push(m,p);
+    simMarkers.current.push({layer:m,sceneIdx},{layer:p,sceneIdx});
   },[]);
 
   const runScene = useCallback((idx)=>{
@@ -232,11 +253,14 @@ function WarSimulation({ onClose }) {
     setProgress(Math.round((idx/SIM_SCENES.length)*100));
     setTitleVisible(false); setNarVisible(false); setStatsVisible(false);
 
+    // Fade layers from previous scene, remove layers 2+ scenes old
+    fadeOldLayers(idx);
+
     // Wipe all lines and markers for clean "ending" slides
     if(scene.clearMap && simLMap.current){
-      simLines.current.forEach(l=>{ try{ l.remove(); }catch(e){} });
+      simLines.current.forEach(({layer})=>{ try{ layer.remove(); }catch(e){} });
       simLines.current=[];
-      simMarkers.current.forEach(m=>{ try{ m.remove(); }catch(e){} });
+      simMarkers.current.forEach(({layer})=>{ try{ layer.remove(); }catch(e){} });
       simMarkers.current=[];
       simLMap.current.flyTo([31,49],5,{duration:1.2/speedRef.current,easeLinearity:0.5});
     }
@@ -256,7 +280,7 @@ function WarSimulation({ onClose }) {
       const L=window.L,map=simLMap.current;
       setTimeout(()=>setTitleVisible(true),100);
       setNarrative(scene.narrative); setTimeout(()=>setNarVisible(true),500);
-      addImpactMarker(L,map,scene.lat,scene.lng,scene.label,scene.color);
+      addImpactMarker(L,map,scene.lat,scene.lng,scene.label,scene.color,idx,scene.targetCity);
       // Fly slightly north of impact so it appears in upper-centre, not behind narrative box
       map.flyTo([scene.lat+2, scene.lng],7,{duration:1.5/speedRef.current,easeLinearity:0.5});
       timeoutRef.current=setTimeout(advance,dur);
@@ -270,11 +294,11 @@ function WarSimulation({ onClose }) {
       map.flyTo([midLat,midLng],5,{duration:1.2/speedRef.current,easeLinearity:0.5});
       const oIcon=L.divIcon({className:"",html:`<div style="color:${scene.color};font-size:15px;filter:drop-shadow(0 0 6px ${scene.color})">${scene.icon}</div>`,iconSize:[15,15],iconAnchor:[7,7]});
       const om=L.marker(scene.origin,{icon:oIcon,zIndexOffset:1500}).addTo(map);
-      simMarkers.current.push(om);
-      setTimeout(()=>{ if(simLMap.current) animateLine(L,map,scene.origin,scene.target,scene.color,dur*0.8); },700/speedRef.current);
+      simMarkers.current.push({layer:om,sceneIdx:idx});
+      setTimeout(()=>{ if(simLMap.current) animateLine(L,map,scene.origin,scene.target,scene.color,dur*0.8,idx,scene.targetCity); },700/speedRef.current);
       timeoutRef.current=setTimeout(advance,dur);
     }
-  },[addImpactMarker,animateLine,sceneDuration]);
+  },[addImpactMarker,animateLine,fadeOldLayers,sceneDuration]);
 
   useEffect(()=>{
     const css=document.createElement("link");css.rel="stylesheet";
@@ -321,8 +345,8 @@ function WarSimulation({ onClose }) {
     clearTimeout(timeoutRef.current);
     // Clear all map drawings
     if(simLMap.current){
-      simLines.current.forEach(l=>l.remove()); simLines.current=[];
-      simMarkers.current.forEach(m=>m.remove()); simMarkers.current=[];
+      simLines.current.forEach(({layer})=>{ try{layer.remove();}catch(e){} }); simLines.current=[];
+      simMarkers.current.forEach(({layer})=>{ try{layer.remove();}catch(e){} }); simMarkers.current=[];
       simLMap.current.setView([31,49],5);
     }
     simPlaying.current=false; setPlayingS(false);
@@ -333,7 +357,11 @@ function WarSimulation({ onClose }) {
 
   const restart=()=>{
     clearTimeout(timeoutRef.current);simPlaying.current=true;setPlayingS(true);
-    if(simLMap.current){simLines.current.forEach(l=>l.remove());simLines.current=[];simMarkers.current.forEach(m=>m.remove());simMarkers.current=[];simLMap.current.setView([31,49],5);}
+    if(simLMap.current){
+      simLines.current.forEach(({layer})=>{ try{layer.remove();}catch(e){} });simLines.current=[];
+      simMarkers.current.forEach(({layer})=>{ try{layer.remove();}catch(e){} });simMarkers.current=[];
+      simLMap.current.setView([31,49],5);
+    }
     runScene(0);
   };
   const scene=SIM_SCENES[sceneNum]||SIM_SCENES[0];
@@ -354,7 +382,7 @@ function WarSimulation({ onClose }) {
         {titleVisible&&isTitleScene&&(
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:1000,pointerEvents:"none"}}>
             <div style={{textAlign:"center",animation:"fadeInUp 0.6s ease-out"}}>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#ef4444",letterSpacing:3,marginBottom:16,opacity:0.8}}>⬛ CLASSIFICATION: TOP SECRET // SI // NOFORN</div>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#ef4444",letterSpacing:3,marginBottom:16,opacity:0.8}}>TS/SCI // ORCON // NOFORN · CENTCOM J2 INTEL BRIEF · OPERATION EPIC FURY</div>
               <div style={{fontFamily:"'Orbitron',monospace",fontSize:30,fontWeight:900,color:"#ef4444",letterSpacing:6,textShadow:"0 0 50px #ef444488, 0 0 100px #ef444422",marginBottom:14}}>{scene.title}</div>
               <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:14,color:"#c8dae8",letterSpacing:2,lineHeight:2.1,maxWidth:540,textAlign:"center",whiteSpace:"pre-line"}}>{scene.subtitle}</div>
             </div>
@@ -372,7 +400,7 @@ function WarSimulation({ onClose }) {
         {/* Stats scene */}
         {isStatsScene&&statsVisible&&(
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:1000,pointerEvents:"none",background:"rgba(3,5,10,0.8)"}}>
-            <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#ef4444",letterSpacing:3,marginBottom:12,opacity:0.8}}>⬛ CLASSIFICATION: TOP SECRET // SI // NOFORN</div>
+            <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#ef4444",letterSpacing:3,marginBottom:12,opacity:0.8}}>CENTCOM J2 AFTER-ACTION INTELLIGENCE SUMMARY · TS/SCI // NOFORN</div>
             <div style={{fontFamily:"'Orbitron',monospace",fontSize:22,fontWeight:900,color:"#ef4444",letterSpacing:4,marginBottom:28,animation:"fadeInUp 0.5s ease-out",textShadow:"0 0 30px #ef444455"}}>WAR STATUS — DAY 21</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:14,justifyContent:"center",maxWidth:580,animation:"fadeInUp 0.7s ease-out"}}>
               {STATS_DATA.map((s,i)=>(
