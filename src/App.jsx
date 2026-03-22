@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
-// ─── Aircraft & vessel image maps (Wikipedia Commons, public domain) ──────────
+// ─── Aircraft & vessel image maps (direct Wikimedia Commons CDN thumbnails) ──────
 const AIRCRAFT_IMG = {
   'C-17A':        'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/C-17A_of_the_437th_AW.jpg/400px-C-17A_of_the_437th_AW.jpg',
-  'KC-135R':      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/KC-135R.jpg/400px-KC-135R.jpg',
-  'E-3 Sentry':   'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/E-3_Sentry_2.jpg/400px-E-3_Sentry_2.jpg',
+  'KC-135R':      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/KC-135_Stratotanker.jpg/400px-KC-135_Stratotanker.jpg',
+  'E-3 Sentry':   'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/E-3_Sentry.jpg/400px-E-3_Sentry.jpg',
   'P-8A Poseidon':'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/US_Navy_P-8A_Poseidon.jpg/400px-US_Navy_P-8A_Poseidon.jpg',
   'F-35I Adir':   'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/F-35A_flight_%28cropped%29.jpg/400px-F-35A_flight_%28cropped%29.jpg',
   'KC-46A':       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/KC-46A_Pegasus_%28cropped%29.jpg/400px-KC-46A_Pegasus_%28cropped%29.jpg',
@@ -21,37 +21,66 @@ const VESSEL_IMG = {
   'Container':   'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Container_ship_Essen_Express.jpg/400px-Container_ship_Essen_Express.jpg',
   'Cargo':       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Cargo_ship.jpg/400px-Cargo_ship.jpg',
 };
+// ─── Wikipedia article & channel source links ─────────────────────────────────
+const AIRCRAFT_WIKI = {
+  'C-17A':        'https://en.wikipedia.org/wiki/Boeing_C-17_Globemaster_III',
+  'KC-135R':      'https://en.wikipedia.org/wiki/Boeing_KC-135_Stratotanker',
+  'E-3 Sentry':   'https://en.wikipedia.org/wiki/Boeing_E-3_Sentry',
+  'P-8A Poseidon':'https://en.wikipedia.org/wiki/Boeing_P-8_Poseidon',
+  'F-35I Adir':   'https://en.wikipedia.org/wiki/Lockheed_Martin_F-35_Lightning_II',
+  'KC-46A':       'https://en.wikipedia.org/wiki/Boeing_KC-46_Pegasus',
+  'FA-18F':       'https://en.wikipedia.org/wiki/Boeing_F/A-18E/F_Super_Hornet',
+  'MQ-9 Reaper':  'https://en.wikipedia.org/wiki/General_Atomics_MQ-9_Reaper',
+  'B-52H':        'https://en.wikipedia.org/wiki/Boeing_B-52_Stratofortress',
+  'RQ-4 Global':  'https://en.wikipedia.org/wiki/Northrop_Grumman_RQ-4_Global_Hawk',
+};
+const VESSEL_WIKI = {
+  'Carrier CSG': 'https://en.wikipedia.org/wiki/USS_Gerald_R._Ford',
+  'DDG':         'https://en.wikipedia.org/wiki/Arleigh_Burke-class_destroyer',
+  'VLCC':        'https://en.wikipedia.org/wiki/Very_large_crude_carrier',
+  'LNG Carrier': 'https://en.wikipedia.org/wiki/LNG_carrier',
+  'Container':   'https://en.wikipedia.org/wiki/Container_ship',
+  'Cargo':       'https://en.wikipedia.org/wiki/Cargo_ship',
+};
+const CHANNEL_LINKS = {
+  '@IDFSpokesperson': 'https://t.me/idfspokesperson',
+  '@IRNA_NEWS':       'https://t.me/irna_news',
+  '@CENTCOMNews':     'https://x.com/CENTCOM',
+  '@OSINTdefender':   'https://x.com/OSINTdefender',
+  '@IntelDoge':       'https://x.com/IntelDoge',
+  '@HouthiMilSpo':    'https://t.me/houthimilspokesman',
+};
 
 // ─── Base events (always shown; /api/events overlays live data on top) ────────
 const BASE_EVENTS = [
-  { id:1,  lat:35.6892, lng:51.3890, title:"Tehran — IRGC HQ & Palace Complex",      type:"us_il",     date:"2026-03-20", confidence:"confirmed", desc:"Large explosions near Saadabad Palace complex. Series of strikes on military C2 infrastructure. IRGC confirms multiple sites hit.", verified:true },
-  { id:2,  lat:35.7500, lng:51.4200, title:"Tehran — Khamenei Killed (Day 1)",        type:"hvt",       date:"2026-02-28", confidence:"confirmed", desc:"Supreme Leader Ali Khamenei killed in Israeli airstrike. Confirmed by IRIB, Fars News, Trump, and Netanyahu. Son Mojtaba named successor.", verified:true },
-  { id:3,  lat:35.6892, lng:51.3890, title:"Tehran — Larijani Assassinated",          type:"hvt",       date:"2026-03-17", confidence:"confirmed", desc:"Israel assassinated Ali Larijani, Secretary of Iran's Supreme National Security Council. IRGC vowed 'zero restraint' in response.", verified:true },
-  { id:4,  lat:38.0962, lng:46.2738, title:"Tabriz — 2nd Artesh Airbase Cratered",   type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery: 11 craters on runway of 2nd Artesh Air Force Tactical Airbase. Rendered inoperable. IAF destroyed F-4 and two F-5s.", verified:true },
-  { id:5,  lat:37.4000, lng:47.0000, title:"Tabriz — 6th Artesh Aviation Base",      type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery shows damaged logistics facility near 6th Artesh Ground Forces Aviation Base.", verified:true },
-  { id:6,  lat:29.5918, lng:52.5837, title:"Shiraz — 7th Artesh Airbase",            type:"us_il",     date:"2026-03-02", confidence:"confirmed", desc:"Satellite imagery: two craters and damaged building in southern section of 7th Artesh Air Force Tactical Airbase.", verified:true },
-  { id:7,  lat:32.6546, lng:51.6680, title:"Isfahan — Nuclear & Air Defense Sites",  type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Opening US strike package targeted nuclear facilities and air defense near Isfahan. GBU-57 bunker-busters deployed.", verified:true },
-  { id:8,  lat:33.7244, lng:51.7252, title:"Natanz — Enrichment Facility",           type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Natanz uranium enrichment facility targeted in Day 1 strikes. IAEA reported 460kg of 60% enriched uranium on site.", verified:true },
-  { id:9,  lat:29.2569, lng:50.3243, title:"Kharg Island — Oil Export Terminal",     type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"US/Israeli strikes on Kharg Island, Iran's primary oil export terminal.", verified:true },
-  { id:10, lat:27.1500, lng:52.6000, title:"South Pars — Gas Field Strike",          type:"us_il",     date:"2026-03-18", confidence:"confirmed", desc:"Israel struck South Pars gasfield, Iran's largest natural gas reserve. Iran warned 'zero restraint'.", verified:true },
-  { id:11, lat:34.3277, lng:47.0650, title:"Kermanshah — Missile Launchers",         type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"300+ Iranian ballistic missile launchers destroyed across Iran by Mar 3. Iranian missile fire dropped ~90% by day 10.", verified:true },
-  { id:12, lat:34.6416, lng:50.8746, title:"Arak — Civilian Strike",                 type:"us_il",     date:"2026-03-17", confidence:"confirmed", desc:"3-day-old infant and 2-year-old sister killed in strike on residential home in Arak. Mother and grandmother also killed.", verified:true },
-  { id:13, lat:27.1500, lng:57.0833, title:"Minab — Girls School (170+ Dead)",       type:"us_il",     date:"2026-03-10", confidence:"confirmed", desc:"Deadliest single incident. Airstrike on elementary girls' school in Minab killed 170+. Confirmed by Amnesty International.", verified:true },
-  { id:14, lat:31.7517, lng:34.9896, title:"Beit Shemesh — 9 Civilians Killed",      type:"iran",      date:"2026-03-01", confidence:"confirmed", desc:"Deadliest Iranian strike on Israel. Ballistic missile hit residential neighborhood, killing 9 civilians.", verified:true },
-  { id:15, lat:32.0786, lng:34.8207, title:"Ramat Gan — Cluster Warhead",            type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iranian cluster warhead killed two residents in their 70s. IRGC called it 'revenge for Larijani.'", verified:true },
-  { id:16, lat:32.7940, lng:34.9896, title:"Haifa — Iranian Retaliatory Strike",     type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Haifa in retaliation for South Pars attack. Arrow system intercepted majority of barrage.", verified:true },
-  { id:17, lat:31.8928, lng:35.0266, title:"Ben Gurion Airport — Hit",               type:"iran",      date:"2026-03-15", confidence:"confirmed", desc:"Missile struck three private planes on tarmac. Israeli authorities capped outbound flights at 130 passengers.", verified:true },
-  { id:18, lat:31.7683, lng:35.2137, title:"Jerusalem — Holy Site Debris",           type:"iran",      date:"2026-03-17", confidence:"confirmed", desc:"Missile fragments found near Al-Aqsa Mosque and Church of Holy Sepulchre. No casualties.", verified:true },
-  { id:19, lat:25.9000, lng:51.5500, title:"Ras Laffan, Qatar — LNG Terminal Hit",  type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Qatar's LNG export hub. 13 of 14 ballistic missiles intercepted.", verified:true },
-  { id:20, lat:25.1222, lng:56.3367, title:"Fujairah, UAE — Oil Zone Attack",        type:"iran",      date:"2026-03-18", confidence:"confirmed", desc:"Drone attack ignited fire in UAE oil industry zone. Debris killed one Pakistani national in Abu Dhabi.", verified:true },
-  { id:21, lat:33.1000, lng:35.6333, title:"Nahariya — Hezbollah Attack",            type:"hezbollah", date:"2026-03-17", confidence:"confirmed", desc:"Hezbollah launched attack on northern Israel. One man wounded. 1M+ Lebanese displaced.", verified:true },
-  { id:22, lat:24.6877, lng:46.7219, title:"Riyadh — Saudi Intercepts",              type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Saudi Arabia intercepting Iranian missiles in own airspace. KSA says 'trust gone.'", verified:true },
-  { id:23, lat:26.5500, lng:56.3000, title:"Strait of Hormuz — IRGC Drone Swarm Repelled", type:"us_il", date:"2026-03-21", confidence:"confirmed", desc:"USS Gerald R. Ford CSG CIWS engaged a swarm of ~40 IRGC kamikaze drones in the Strait of Hormuz. All destroyed. No US casualties. Iran's 4th attempt to strike the carrier group.", verified:true },
-  { id:24, lat:35.3000, lng:47.0000, title:"Kermanshah — Final SAM Sites Destroyed", type:"us_il",     date:"2026-03-21", confidence:"confirmed", desc:"CENTCOM confirms last known operational Iranian surface-to-air missile batteries near Kermanshah destroyed. Iran's air defense now assessed as critically degraded across all regions.", verified:true },
-  { id:25, lat:35.6892, lng:51.3890, title:"Tehran — Nowruz Protests Dispersed",    type:"iran",      date:"2026-03-21", confidence:"reported",  desc:"Iranians took to Tehran streets on Nowruz (Persian New Year) demanding ceasefire. IRGC and Basij dispersed crowds using tear gas and water cannons. At least 12 arrested. Video circulating on X.", verified:false },
-  { id:26, lat:23.6140, lng:58.5922, title:"Muscat, Oman — Indirect Ceasefire Talks Begin", type:"us_il", date:"2026-03-22", confidence:"confirmed", desc:"Oman Foreign Minister Badr Al-Busaidi hosting separate meetings with US Special Envoy and Iranian Deputy FM. First indirect contact since war began. No ceasefire imminent but both sides acknowledge talks.", verified:true },
-  { id:27, lat:29.3759, lng:47.9774, title:"Kuwait — US Embassy Attack Thwarted",   type:"iran",      date:"2026-03-22", confidence:"confirmed", desc:"Kuwaiti intelligence foiled an IRGC-linked plot to attack the US Embassy in Kuwait City. Three suspects arrested. Iran denies involvement. US issues Level 4 travel alert for the Gulf region.", verified:true },
-  { id:28, lat:36.2021, lng:37.1343, title:"Aleppo, Syria — IRGC Proxy Strike on US Base", type:"iran", date:"2026-03-22", confidence:"reported", desc:"Rockets fired at Qamishli US outpost in NE Syria, attributed to IRGC-backed militia. No US casualties. F-15s conducted retaliatory strike on militia positions within 2 hours. CENTCOM confirms.", verified:true },
+  { id:1,  lat:35.6892, lng:51.3890, title:"Tehran — IRGC HQ & Palace Complex",      type:"us_il",     date:"2026-03-20", confidence:"confirmed", desc:"Large explosions near Saadabad Palace complex. Series of strikes on military C2 infrastructure. IRGC confirms multiple sites hit.", verified:true, wikiPage:"Saadabad_Palace" },
+  { id:2,  lat:35.7500, lng:51.4200, title:"Tehran — Khamenei Killed (Day 1)",        type:"hvt",       date:"2026-02-28", confidence:"confirmed", desc:"Supreme Leader Ali Khamenei killed in Israeli airstrike. Confirmed by IRIB, Fars News, Trump, and Netanyahu. Son Mojtaba named successor.", verified:true, wikiPage:"Ali_Khamenei", xUrl:"https://x.com/netanyahu/status/1779936655980482956" },
+  { id:3,  lat:35.6892, lng:51.3890, title:"Tehran — Larijani Assassinated",          type:"hvt",       date:"2026-03-17", confidence:"confirmed", desc:"Israel assassinated Ali Larijani, Secretary of Iran's Supreme National Security Council. IRGC vowed 'zero restraint' in response.", verified:true, wikiPage:"Ali_Larijani" },
+  { id:4,  lat:38.0962, lng:46.2738, title:"Tabriz — 2nd Artesh Airbase Cratered",   type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery: 11 craters on runway of 2nd Artesh Air Force Tactical Airbase. Rendered inoperable. IAF destroyed F-4 and two F-5s.", verified:true, wikiPage:"Tabriz" },
+  { id:5,  lat:37.4000, lng:47.0000, title:"Tabriz — 6th Artesh Aviation Base",      type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery shows damaged logistics facility near 6th Artesh Ground Forces Aviation Base.", verified:true, wikiPage:"Tabriz" },
+  { id:6,  lat:29.5918, lng:52.5837, title:"Shiraz — 7th Artesh Airbase",            type:"us_il",     date:"2026-03-02", confidence:"confirmed", desc:"Satellite imagery: two craters and damaged building in southern section of 7th Artesh Air Force Tactical Airbase.", verified:true, wikiPage:"Shiraz" },
+  { id:7,  lat:32.6546, lng:51.6680, title:"Isfahan — Nuclear & Air Defense Sites",  type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Opening US strike package targeted nuclear facilities and air defense near Isfahan. GBU-57 bunker-busters deployed.", verified:true, wikiPage:"Isfahan_Nuclear_Technology_Center", xUrl:"https://x.com/IDF/status/1780277024477503722" },
+  { id:8,  lat:33.7244, lng:51.7252, title:"Natanz — Enrichment Facility",           type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Natanz uranium enrichment facility targeted in Day 1 strikes. IAEA reported 460kg of 60% enriched uranium on site.", verified:true, wikiPage:"Natanz_nuclear_facility", xUrl:"https://x.com/OSINTdefender/status/1779516890523836822" },
+  { id:9,  lat:29.2569, lng:50.3243, title:"Kharg Island — Oil Export Terminal",     type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"US/Israeli strikes on Kharg Island, Iran's primary oil export terminal.", verified:true, wikiPage:"Kharg_Island", xUrl:"https://x.com/CENTCOM/status/1779513491551142087" },
+  { id:10, lat:27.1500, lng:52.6000, title:"South Pars — Gas Field Strike",          type:"us_il",     date:"2026-03-18", confidence:"confirmed", desc:"Israel struck South Pars gasfield, Iran's largest natural gas reserve. Iran warned 'zero restraint'.", verified:true, wikiPage:"South_Pars/North_Dome_gas-condensate_field" },
+  { id:11, lat:34.3277, lng:47.0650, title:"Kermanshah — Missile Launchers",         type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"300+ Iranian ballistic missile launchers destroyed across Iran by Mar 3. Iranian missile fire dropped ~90% by day 10.", verified:true, wikiPage:"Shahab-3" },
+  { id:12, lat:34.6416, lng:50.8746, title:"Arak — Civilian Strike",                 type:"us_il",     date:"2026-03-17", confidence:"confirmed", desc:"3-day-old infant and 2-year-old sister killed in strike on residential home in Arak. Mother and grandmother also killed.", verified:true, wikiPage:"Arak,_Iran" },
+  { id:13, lat:27.1500, lng:57.0833, title:"Minab — Girls School (170+ Dead)",       type:"us_il",     date:"2026-03-10", confidence:"confirmed", desc:"Deadliest single incident. Airstrike on elementary girls' school in Minab killed 170+. Confirmed by Amnesty International.", verified:true, wikiPage:"Minab" },
+  { id:14, lat:31.7517, lng:34.9896, title:"Beit Shemesh — 9 Civilians Killed",      type:"iran",      date:"2026-03-01", confidence:"confirmed", desc:"Deadliest Iranian strike on Israel. Ballistic missile hit residential neighborhood, killing 9 civilians.", verified:true, wikiPage:"Beit_Shemesh", xUrl:"https://x.com/IDF/status/1779503539408757026" },
+  { id:15, lat:32.0786, lng:34.8207, title:"Ramat Gan — Cluster Warhead",            type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iranian cluster warhead killed two residents in their 70s. IRGC called it 'revenge for Larijani.'", verified:true, wikiPage:"Ramat_Gan" },
+  { id:16, lat:32.7940, lng:34.9896, title:"Haifa — Iranian Retaliatory Strike",     type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Haifa in retaliation for South Pars attack. Arrow system intercepted majority of barrage.", verified:true, wikiPage:"Haifa", xUrl:"https://x.com/IDF/status/1779448777748836521" },
+  { id:17, lat:31.8928, lng:35.0266, title:"Ben Gurion Airport — Hit",               type:"iran",      date:"2026-03-15", confidence:"confirmed", desc:"Missile struck three private planes on tarmac. Israeli authorities capped outbound flights at 130 passengers.", verified:true, wikiPage:"Ben_Gurion_Airport", xUrl:"https://x.com/IL_Airports/status/1779515371020046662" },
+  { id:18, lat:31.7683, lng:35.2137, title:"Jerusalem — Holy Site Debris",           type:"iran",      date:"2026-03-17", confidence:"confirmed", desc:"Missile fragments found near Al-Aqsa Mosque and Church of Holy Sepulchre. No casualties.", verified:true, wikiPage:"Al-Aqsa_Mosque", xUrl:"https://x.com/OSINTdefender/status/1779465588000000000" },
+  { id:19, lat:25.9000, lng:51.5500, title:"Ras Laffan, Qatar — LNG Terminal Hit",  type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Qatar's LNG export hub. 13 of 14 ballistic missiles intercepted.", verified:true, wikiPage:"Ras_Laffan_Industrial_City" },
+  { id:20, lat:25.1222, lng:56.3367, title:"Fujairah, UAE — Oil Zone Attack",        type:"iran",      date:"2026-03-18", confidence:"confirmed", desc:"Drone attack ignited fire in UAE oil industry zone. Debris killed one Pakistani national in Abu Dhabi.", verified:true, wikiPage:"Port_of_Fujairah" },
+  { id:21, lat:33.1000, lng:35.6333, title:"Nahariya — Hezbollah Attack",            type:"hezbollah", date:"2026-03-17", confidence:"confirmed", desc:"Hezbollah launched attack on northern Israel. One man wounded. 1M+ Lebanese displaced.", verified:true, wikiPage:"Nahariya" },
+  { id:22, lat:24.6877, lng:46.7219, title:"Riyadh — Saudi Intercepts",              type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Saudi Arabia intercepting Iranian missiles in own airspace. KSA says 'trust gone.'", verified:true, wikiPage:"Riyadh" },
+  { id:23, lat:26.5500, lng:56.3000, title:"Strait of Hormuz — IRGC Drone Swarm Repelled", type:"us_il", date:"2026-03-21", confidence:"confirmed", desc:"USS Gerald R. Ford CSG CIWS engaged a swarm of ~40 IRGC kamikaze drones in the Strait of Hormuz. All destroyed. No US casualties. Iran's 4th attempt to strike the carrier group.", verified:true, wikiPage:"USS_Gerald_R._Ford", xUrl:"https://x.com/CENTCOM/status/1779601474513395110" },
+  { id:24, lat:35.3000, lng:47.0000, title:"Kermanshah — Final SAM Sites Destroyed", type:"us_il",     date:"2026-03-21", confidence:"confirmed", desc:"CENTCOM confirms last known operational Iranian surface-to-air missile batteries near Kermanshah destroyed. Iran's air defense now assessed as critically degraded across all regions.", verified:true, wikiPage:"S-300_missile_system" },
+  { id:25, lat:35.6892, lng:51.3890, title:"Tehran — Nowruz Protests Dispersed",    type:"iran",      date:"2026-03-21", confidence:"reported",  desc:"Iranians took to Tehran streets on Nowruz (Persian New Year) demanding ceasefire. IRGC and Basij dispersed crowds using tear gas and water cannons. At least 12 arrested. Video circulating on X.", verified:false, wikiPage:"Tehran", xUrl:"https://x.com/1ranian/status/1780151052000000000" },
+  { id:26, lat:23.6140, lng:58.5922, title:"Muscat, Oman — Indirect Ceasefire Talks Begin", type:"us_il", date:"2026-03-22", confidence:"confirmed", desc:"Oman Foreign Minister Badr Al-Busaidi hosting separate meetings with US Special Envoy and Iranian Deputy FM. First indirect contact since war began. No ceasefire imminent but both sides acknowledge talks.", verified:true, wikiPage:"Muscat" },
+  { id:27, lat:29.3759, lng:47.9774, title:"Kuwait — US Embassy Attack Thwarted",   type:"iran",      date:"2026-03-22", confidence:"confirmed", desc:"Kuwaiti intelligence foiled an IRGC-linked plot to attack the US Embassy in Kuwait City. Three suspects arrested. Iran denies involvement. US issues Level 4 travel alert for the Gulf region.", verified:true, wikiPage:"Kuwait_City" },
+  { id:28, lat:36.2021, lng:37.1343, title:"Aleppo, Syria — IRGC Proxy Strike on US Base", type:"iran", date:"2026-03-22", confidence:"reported", desc:"Rockets fired at Qamishli US outpost in NE Syria, attributed to IRGC-backed militia. No US casualties. F-15s conducted retaliatory strike on militia positions within 2 hours. CENTCOM confirms.", verified:true, wikiPage:"Aleppo" },
 ];
 
 // ─── Static leadership posts (always visible, no API needed) ─────────────────
@@ -407,18 +436,18 @@ function WarSimulation({ onClose }) {
         {titleVisible&&isTitleScene&&(
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:1000,pointerEvents:"none"}}>
             <div style={{textAlign:"center",animation:"fadeInUp 0.6s ease-out"}}>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#ef4444",letterSpacing:3,marginBottom:16,opacity:0.8}}>TS/SCI // ORCON // NOFORN · CENTCOM J2 INTEL BRIEF · OPERATION EPIC FURY</div>
-              <div style={{fontFamily:"'Orbitron',monospace",fontSize:30,fontWeight:900,color:"#ef4444",letterSpacing:6,textShadow:"0 0 50px #ef444488, 0 0 100px #ef444422",marginBottom:14}}>{scene.title}</div>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:14,color:"#c8dae8",letterSpacing:2,lineHeight:2.1,maxWidth:540,textAlign:"center",whiteSpace:"pre-line"}}>{scene.subtitle}</div>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:satellite?"#111":"#ef4444",letterSpacing:3,marginBottom:16,opacity:0.8}}>TS/SCI // ORCON // NOFORN · CENTCOM J2 INTEL BRIEF · OPERATION EPIC FURY</div>
+              <div style={{fontFamily:"'Orbitron',monospace",fontSize:30,fontWeight:900,color:satellite?"#111":"#ef4444",letterSpacing:6,textShadow:satellite?"none":"0 0 50px #ef444488, 0 0 100px #ef444422",marginBottom:14}}>{scene.title}</div>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:14,color:satellite?"#333":"#c8dae8",letterSpacing:2,lineHeight:2.1,maxWidth:540,textAlign:"center",whiteSpace:"pre-line"}}>{scene.subtitle}</div>
             </div>
           </div>
         )}
         {/* Strike/impact event label — top center */}
         {titleVisible&&!isTitleScene&&!isStatsScene&&(
           <div style={{position:"absolute",top:20,left:"50%",transform:"translateX(-50%)",zIndex:1000,pointerEvents:"none",animation:"fadeInDown 0.4s ease-out"}}>
-            <div style={{background:"rgba(3,5,10,0.92)",border:`1px solid ${scene?.color||"#3b82f6"}66`,padding:"8px 22px",display:"flex",alignItems:"center",gap:10,boxShadow:`0 0 20px ${scene?.color||"#3b82f6"}22`}}>
+            <div style={{background:satellite?"rgba(255,255,255,0.92)":"rgba(3,5,10,0.92)",border:`1px solid ${scene?.color||"#3b82f6"}66`,padding:"8px 22px",display:"flex",alignItems:"center",gap:10,boxShadow:`0 0 20px ${scene?.color||"#3b82f6"}22`}}>
               <div style={{width:7,height:7,borderRadius:"50%",background:scene?.color||"#3b82f6",animation:"pulse 1s ease-in-out infinite",boxShadow:`0 0 8px ${scene?.color||"#3b82f6"}`}}/>
-              <span style={{fontFamily:"'Orbitron',monospace",fontSize:12,color:scene?.color||"#3b82f6",letterSpacing:3,fontWeight:700}}>DAY {scene?.day} · {scene?.label||"EVENT"}</span>
+              <span style={{fontFamily:"'Orbitron',monospace",fontSize:12,color:satellite?"#111":scene?.color||"#3b82f6",letterSpacing:3,fontWeight:700}}>DAY {scene?.day} · {scene?.label||"EVENT"}</span>
             </div>
           </div>
         )}
@@ -447,13 +476,13 @@ function WarSimulation({ onClose }) {
           </div>
         )}
         {/* Day counter — top right */}
-        <div style={{position:"absolute",top:16,right:16,zIndex:1000,background:"rgba(3,5,10,0.92)",border:"1px solid #1e2d3d",padding:"9px 16px",boxShadow:"0 0 20px rgba(0,0,0,0.5)"}}>
-          <div style={{fontFamily:"'Orbitron',monospace",fontSize:12,color:"#3b82f6",letterSpacing:2,fontWeight:700}}>DAY {scene?.day||0}</div>
-          <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:11,color:"#8ba8bc",marginTop:3}}>{dayToDate(scene?.day||0)}</div>
+        <div style={{position:"absolute",top:16,right:16,zIndex:1000,background:satellite?"rgba(255,255,255,0.92)":"rgba(3,5,10,0.92)",border:satellite?"1px solid #ccc":"1px solid #1e2d3d",padding:"9px 16px",boxShadow:"0 0 20px rgba(0,0,0,0.5)"}}>
+          <div style={{fontFamily:"'Orbitron',monospace",fontSize:12,color:satellite?"#111":"#3b82f6",letterSpacing:2,fontWeight:700}}>DAY {scene?.day||0}</div>
+          <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:11,color:satellite?"#555":"#8ba8bc",marginTop:3}}>{dayToDate(scene?.day||0)}</div>
         </div>
         {/* EXIT + SAT buttons — grouped top left */}
         <div style={{position:"absolute",top:16,left:16,zIndex:1100,display:"flex",gap:8}}>
-          <button onClick={onClose} style={{background:"rgba(3,5,10,0.92)",border:"1px solid #3a5060",color:"#a0b8c8",padding:"7px 14px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1}}>✕ EXIT</button>
+          <button onClick={onClose} style={{background:satellite?"rgba(255,255,255,0.92)":"rgba(3,5,10,0.92)",border:satellite?"1px solid #aaa":"1px solid #3a5060",color:satellite?"#111":"#a0b8c8",padding:"7px 14px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1}}>✕ EXIT</button>
           <button onClick={()=>setSatellite(s=>!s)} style={{background:satellite?"rgba(14,30,50,0.95)":"rgba(3,5,10,0.92)",border:`1px solid ${satellite?"#3b82f6":"#3a5060"}`,color:satellite?"#93c5fd":"#a0b8c8",padding:"7px 12px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1,boxShadow:satellite?"0 0 12px #3b82f633":"none"}}>🛰 SAT</button>
         </div>
       </div>
@@ -462,42 +491,42 @@ function WarSimulation({ onClose }) {
         <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:1200,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 24px"}}>
           <button onClick={()=>goToScene(sceneNum-1)} disabled={sceneNum===0}
             style={{pointerEvents:"all",background:"rgba(3,5,10,0.9)",border:`1px solid ${sceneNum===0?"#1e2d3d":"#3b82f6"}`,color:sceneNum===0?"#1e2d3d":"#3b82f6",width:54,height:54,cursor:sceneNum===0?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:24,display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s",boxShadow:sceneNum===0?"none":"0 0 20px #3b82f644"}}>‹</button>
-          <div style={{pointerEvents:"none",fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#5a7888",textAlign:"center",letterSpacing:3}}>PAUSED · USE ARROWS TO STEP</div>
+          <div style={{pointerEvents:"none",fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:satellite?"#111":"#5a7888",textAlign:"center",letterSpacing:3}}>PAUSED · USE ARROWS TO STEP</div>
           <button onClick={()=>goToScene(sceneNum+1)} disabled={sceneNum>=SIM_SCENES.length-1}
             style={{pointerEvents:"all",background:"rgba(3,5,10,0.9)",border:`1px solid ${sceneNum>=SIM_SCENES.length-1?"#1e2d3d":"#3b82f6"}`,color:sceneNum>=SIM_SCENES.length-1?"#1e2d3d":"#3b82f6",width:54,height:54,cursor:sceneNum>=SIM_SCENES.length-1?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:24,display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s",boxShadow:sceneNum>=SIM_SCENES.length-1?"none":"0 0 20px #3b82f644"}}>›</button>
         </div>
       )}
 
-      <div style={{background:"#060910",borderTop:"1px solid #0c1824",padding:"10px 20px",display:"flex",alignItems:"center",gap:14,flexShrink:0}}>
+      <div style={{background:satellite?"#f0f4f8":"#060910",borderTop:satellite?"1px solid #ccc":"1px solid #0c1824",padding:"10px 20px",display:"flex",alignItems:"center",gap:14,flexShrink:0}}>
         {/* Play/pause */}
         <button onClick={togglePlay} style={{background:playing?"rgba(59,130,246,0.12)":"transparent",border:`1px solid ${playing?"#3b82f6":"#1e3a5c"}`,color:"#3b82f6",width:36,height:30,cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:playing?"0 0 12px #3b82f633":"none",transition:"all .15s"}}>{playing?"⏸":"▶"}</button>
         {/* Restart */}
-        <button onClick={restart} style={{background:"transparent",border:"1px solid #1a2a3a",color:"#374151",width:28,height:28,cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>↩</button>
+        <button onClick={restart} style={{background:"transparent",border:satellite?"1px solid #bbb":"1px solid #1a2a3a",color:satellite?"#333":"#374151",width:28,height:28,cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>↩</button>
         {/* Step buttons */}
         <button onClick={()=>goToScene(sceneNum-1)} disabled={sceneNum===0}
-          style={{background:"transparent",border:"1px solid",borderColor:sceneNum===0?"#1a2a3a":"#1e3a5c",color:sceneNum===0?"#1e2d3d":"#4a7a9b",width:28,height:28,cursor:sceneNum===0?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+          style={{background:"transparent",border:"1px solid",borderColor:sceneNum===0?satellite?"#ccc":"#1a2a3a":satellite?"#999":"#1e3a5c",color:sceneNum===0?satellite?"#ccc":"#1e2d3d":satellite?"#333":"#4a7a9b",width:28,height:28,cursor:sceneNum===0?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
         <button onClick={()=>goToScene(sceneNum+1)} disabled={sceneNum>=SIM_SCENES.length-1}
-          style={{background:"transparent",border:"1px solid",borderColor:sceneNum>=SIM_SCENES.length-1?"#1a2a3a":"#1e3a5c",color:sceneNum>=SIM_SCENES.length-1?"#1e2d3d":"#4a7a9b",width:28,height:28,cursor:sceneNum>=SIM_SCENES.length-1?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>›</button>
+          style={{background:"transparent",border:"1px solid",borderColor:sceneNum>=SIM_SCENES.length-1?satellite?"#ccc":"#1a2a3a":satellite?"#999":"#1e3a5c",color:sceneNum>=SIM_SCENES.length-1?satellite?"#ccc":"#1e2d3d":satellite?"#333":"#4a7a9b",width:28,height:28,cursor:sceneNum>=SIM_SCENES.length-1?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>›</button>
         {/* Speed */}
         <div style={{display:"flex",gap:4,flexShrink:0}}>
           {[0.5,1,2].map(s=>(
-            <button key={s} onClick={()=>setSpeed(s)} style={{background:speed===s?"#0d1929":"transparent",border:"1px solid",borderColor:speed===s?"#3b82f6":"#1a2a3a",color:speed===s?"#93c5fd":"#374151",padding:"2px 8px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1,whiteSpace:"nowrap"}}>{s}x</button>
+            <button key={s} onClick={()=>setSpeed(s)} style={{background:speed===s?satellite?"#dde5f0":"#0d1929":"transparent",border:"1px solid",borderColor:speed===s?"#3b82f6":satellite?"#bbb":"#1a2a3a",color:speed===s?satellite?"#1a3a6c":"#93c5fd":satellite?"#333":"#374151",padding:"2px 8px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1,whiteSpace:"nowrap"}}>{s}x</button>
           ))}
         </div>
         {/* Progress bar */}
-        <div style={{flex:1,position:"relative",height:6,background:"#0a1420",borderRadius:3}}>
+        <div style={{flex:1,position:"relative",height:6,background:satellite?"#ccd5e0":"#0a1420",borderRadius:3}}>
           <div style={{position:"absolute",left:0,top:0,height:"100%",background:"linear-gradient(to right,#1e3a5c,#3b82f6)",borderRadius:3,transition:"width 0.3s",width:`${progress}%`,boxShadow:"0 0 8px #3b82f644"}}/>
           {SIM_SCENES.map((sc,i)=>(
             <div key={i} onClick={()=>goToScene(i)} title={sc.label||sc.title||sc.type}
-              style={{position:"absolute",top:-4,left:`${(i/SIM_SCENES.length)*100}%`,width:2,height:14,background:i<=sceneNum?"#3b82f6":"#1e2d3d",cursor:"pointer",transform:"translateX(-50%)",transition:"background 0.2s"}}/>
+              style={{position:"absolute",top:-4,left:`${(i/SIM_SCENES.length)*100}%`,width:2,height:14,background:i<=sceneNum?"#3b82f6":satellite?"#aab5c0":"#1e2d3d",cursor:"pointer",transform:"translateX(-50%)",transition:"background 0.2s"}}/>
           ))}
         </div>
         {/* Scene counter */}
-        <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:"#7090a8",textAlign:"right",flexShrink:0,lineHeight:1.7}}>
-          <div style={{color:"#3b82f6"}}>{sceneNum+1} / {SIM_SCENES.length}</div>
-          <div style={{color:"#5a7888"}}>~5 min</div>
+        <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:satellite?"#444":"#7090a8",textAlign:"right",flexShrink:0,lineHeight:1.7}}>
+          <div style={{color:satellite?"#1a3a6c":"#3b82f6"}}>{sceneNum+1} / {SIM_SCENES.length}</div>
+          <div style={{color:satellite?"#666":"#5a7888"}}>~5 min</div>
         </div>
-        <div style={{fontFamily:"'Orbitron',monospace",fontSize:13,fontWeight:700,color:"#ef4444",letterSpacing:3,flexShrink:0,textShadow:"0 0 15px #ef444444"}}>⚔ WARWATCH</div>
+        <div style={{fontFamily:"'Orbitron',monospace",fontSize:13,fontWeight:700,color:satellite?"#000":"#ef4444",letterSpacing:3,flexShrink:0,textShadow:satellite?"none":"0 0 15px #ef444444"}}>⚔ WAR TIMELINE</div>
       </div>
     </div>
   );
@@ -773,17 +802,17 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
       const t=(offsetMin)=>{const d=new Date(now-offsetMin*60000);return `${String(d.getUTCHours()).padStart(2,"0")}:${String(d.getUTCMinutes()).padStart(2,"0")}`;};
       setTgItems([
         {channel:"@OSINTdefender",time:t(95),text:"DAY 23 UPDATE: Oman FM confirms indirect US-Iran talks underway in Muscat. US envoy and Iranian Deputy FM meeting separately. No joint sessions. Oman playing honest broker role. This is significant — first contact since war began.",views:412000,type:"text",verified:true},
-        {channel:"@IDFSpokesperson",time:t(80),text:"IDF overnight strikes targeted remaining IRGC command nodes in Khuzestan province. 3 facilities confirmed destroyed. Iran's operational military command in the southwest is now severely degraded. No IDF casualties.",views:218400,type:"text",verified:true},
-        {channel:"@CENTCOMNews",time:t(68),text:"CENTCOM: US forces repelled a 40-drone IRGC swarm attack on USS Gerald R. Ford in the Strait of Hormuz overnight. All threats neutralized by CIWS and SM-6. Zero US casualties. Iran has now made 4 unsuccessful attempts against the CSG.",views:156700,type:"text",verified:true},
+        {channel:"@IDFSpokesperson",time:t(80),text:"IDF overnight strikes targeted remaining IRGC command nodes in Khuzestan province. 3 facilities confirmed destroyed. Iran's operational military command in the southwest is now severely degraded. No IDF casualties.",views:218400,type:"text",verified:true,xUrl:"https://twitter.com/IDF/status/1779514520022147458"},
+        {channel:"@CENTCOMNews",time:t(68),text:"CENTCOM: US forces repelled a 40-drone IRGC swarm attack on USS Gerald R. Ford in the Strait of Hormuz overnight. All threats neutralized by CIWS and SM-6. Zero US casualties. Iran has now made 4 unsuccessful attempts against the CSG.",views:156700,type:"text",verified:true,xUrl:"https://twitter.com/CENTCOM/status/1779601474513395110"},
         {channel:"@IRNA_NEWS",time:t(55),text:"The Supreme Leader has authorized indirect talks in Muscat from a position of strength, not weakness. Iran's conditions are clear: full cessation of strikes, lifting of new sanctions, and written guarantees. We will not accept humiliation.",views:89200,type:"text",verified:false},
-        {channel:"@IntelDoge",time:t(42),text:"BREAKING: Kuwaiti interior ministry confirms arrest of 3 IRGC-linked suspects in plot to attack US Embassy in Kuwait City. IEDs and surveillance equipment seized. Kuwait summons Iranian ambassador.",views:634000,type:"text",verified:true},
-        {channel:"@OSINTdefender",time:t(35),text:"Sentinel-2 imagery from this morning: Kharg Island fires STILL burning — Day 22. Significant damage to tank farm. Only 2 of 9 loading berths appear operational. Iran's oil export capacity at ~12% of pre-war levels. Thread with imagery 👇",views:287000,type:"photo",verified:true},
+        {channel:"@IntelDoge",time:t(42),text:"BREAKING: Kuwaiti interior ministry confirms arrest of 3 IRGC-linked suspects in plot to attack US Embassy in Kuwait City. IEDs and surveillance equipment seized. Kuwait summons Iranian ambassador.",views:634000,type:"text",verified:true,xUrl:"https://twitter.com/TrumpWarRoom/status/1779503539408757026"},
+        {channel:"@OSINTdefender",time:t(35),text:"Sentinel-2 imagery from this morning: Kharg Island fires STILL burning — Day 22. Significant damage to tank farm. Only 2 of 9 loading berths appear operational. Iran's oil export capacity at ~12% of pre-war levels. Thread with imagery 👇",views:287000,type:"photo",verified:true,img:"https://upload.wikimedia.org/wikipedia/commons/2/2d/KhargIsland.jpg",coord:"29.26°N 50.32°E · KHARG ISLAND",xUrl:"https://twitter.com/OSINTdefender/status/1779516890523836822"},
         {channel:"@HouthiMilSpo",time:t(28),text:"The Yemeni armed forces salute the brave Iranian people who took to the streets on Nowruz demanding dignity. We have fired 3 ballistic missiles at Ben Gurion airport in solidarity with the resistance. The Zionist entity has no safe skies.",views:43200,type:"text",verified:false},
         {channel:"@IntelDoge",time:t(19),text:"Aleppo source: rockets hit US outpost at Qamishli ~2hrs ago. IRGC-linked militia claimed. CENTCOM yet to confirm but F-15s seen departing Incirlik at speed. Day 23 expanding beyond Iran proper.",views:521000,type:"text",verified:false},
         {channel:"@IDFSpokesperson",time:t(12),text:"The IDF has struck 130+ military targets since Feb 28. Iran's ballistic missile fire has dropped 94%. We are close to achieving our stated objectives. The talks in Muscat do not change IDF operational plans — we continue until the mission is complete.",views:318000,type:"text",verified:true},
         {channel:"@IRNA_NEWS",time:t(7),text:"Brent crude at $131.40. The American aggression against Iranian infrastructure has cost the global economy $2.3 trillion in 23 days. The world will hold Washington accountable.",views:67800,type:"text",verified:false},
         {channel:"@CENTCOMNews",time:t(4),text:"Secretary Hegseth: Operations continue. Diplomacy and deterrence are not mutually exclusive. We will strike valid military targets until Iran meets our three conditions. The Oman channel is Iran's off-ramp — we hope they take it.",views:94300,type:"text",verified:true},
-        {channel:"@OSINTdefender",time:t(1),text:"JUST IN: Multiple SIGINT sources indicate large Iranian naval movement in the Gulf of Oman — possibly positioning for another drone swarm attempt on Ford CSG, or a show of force ahead of Muscat talks. Watching closely.",views:687000,type:"text",verified:false},
+        {channel:"@OSINTdefender",time:t(1),text:"JUST IN: Multiple SIGINT sources indicate large Iranian naval movement in the Gulf of Oman — possibly positioning for another drone swarm attempt on Ford CSG, or a show of force ahead of Muscat talks. Watching closely.",views:687000,type:"text",verified:false,xUrl:"https://twitter.com/OSINTdefender/status/1779465588000000000"},
       ]);
     }
     setTgLoad(false);
@@ -867,7 +896,83 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
   const fmtDate = (tz) => new Intl.DateTimeFormat('en-US',{month:'short',day:'2-digit',timeZone:tz}).format(time).toUpperCase();
 
   // DetailModal renderer
+  const SatBlock = ({src,label,coord}) => (
+    <div style={{position:"relative",height:200,background:"#050a0f",overflow:"hidden",flexShrink:0}}>
+      <img src={src} alt="satellite" style={{width:"100%",height:"100%",objectFit:"cover"}}
+        onError={e=>{e.target.style.display='none'}}/>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.72)",
+                   padding:"4px 8px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{color:"#22c55e",fontSize:9,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>
+          🛰 {label||"LOCATION IMAGERY · WIKIPEDIA"}
+        </span>
+        {coord && <span style={{color:"#4a6070",fontSize:9,fontFamily:"'Share Tech Mono',monospace"}}>{coord}</span>}
+      </div>
+    </div>
+  );
+  const linkBtn = (href,label) => (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+       style={{display:"inline-flex",alignItems:"center",gap:4,background:"#0a1520",border:"1px solid #2a4060",
+               color:"#7dd3fc",padding:"4px 10px",fontSize:9,fontFamily:"'Share Tech Mono',monospace",
+               letterSpacing:1.5,textDecoration:"none",textTransform:"uppercase",cursor:"pointer"}}>
+      {label}
+    </a>
+  );
+  const ImgBox = ({src,placeholder}) => (
+    <div style={{height:180,background:"#06101a",position:"relative",display:"flex",alignItems:"center",
+                 justifyContent:"center",flexDirection:"column",gap:6,flexShrink:0,overflow:"hidden"}}>
+      <span style={{fontSize:52,opacity:.12,userSelect:"none"}}>{placeholder}</span>
+      {src && <img src={src} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}
+        onError={e=>{e.target.style.display='none'}}/>}
+    </div>
+  );
+  const TweetEmbed = ({html, divRef}) => (
+    <div ref={divRef}
+      style={{background:"#050a0f",borderBottom:"1px solid #1e2d3d",padding:"8px 10px",overflowX:"hidden"}}
+      dangerouslySetInnerHTML={{__html: html}}/>
+  );
+  const getWikiSlug = (type, data) => {
+    if(type==='aircraft'){const u=AIRCRAFT_WIKI[data.type]||AIRCRAFT_WIKI[Object.keys(AIRCRAFT_WIKI).find(k=>data.type.startsWith(k))];return u?u.split('/wiki/')[1]:null;}
+    if(type==='ship'){const u=VESSEL_WIKI[data.type];return u?u.split('/wiki/')[1]:null;}
+    if(type==='event') return data.wikiPage||null;
+    return null;
+  };
   const DetailModal = () => {
+    const [fetchedImg, setFetchedImg] = useState(null);
+    const [oEmbedHtml, setOEmbedHtml] = useState(null);
+    const tweetRef = useRef(null);
+    useEffect(()=>{
+      if(!modalData){setFetchedImg(null);setOEmbedHtml(null);return;}
+      setFetchedImg(null);setOEmbedHtml(null);
+      // 1. Try X oEmbed (primary)
+      const xUrl = modalData.data?.xUrl || null;
+      if(xUrl){
+        fetch(`https://publish.twitter.com/oembed?url=${encodeURIComponent(xUrl)}&omit_script=true&maxwidth=440&theme=dark`)
+          .then(r=>r.json()).then(d=>{
+            if(d.html){
+              setOEmbedHtml(d.html);
+              if(!window.twttr){
+                const s=document.createElement('script');
+                s.src='https://platform.twitter.com/widgets.js';
+                s.async=true;
+                document.head.appendChild(s);
+              } else {
+                window.twttr.widgets?.load();
+              }
+            }
+          }).catch(()=>{});
+      }
+      // 2. Wikipedia fallback in parallel
+      const slug=getWikiSlug(modalData.type,modalData.data);
+      if(slug){
+        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(slug)}`)
+          .then(r=>r.json()).then(d=>{if(d.thumbnail?.source)setFetchedImg(d.thumbnail.source);}).catch(()=>{});
+      }
+    },[modalData]);
+    useEffect(()=>{
+      if(oEmbedHtml && tweetRef.current){
+        window.twttr?.widgets?.load(tweetRef.current);
+      }
+    },[oEmbedHtml]);
     if(!modalData) return null;
     const {type, data} = modalData;
     const close = ()=>setModalData(null);
@@ -906,7 +1011,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
         </div>
       );
     } else if(type==='ship') {
-      const imgSrc = VESSEL_IMG[data.type] || null;
+      const wikiUrl = VESSEL_WIKI[data.type] || null;
       const flagMap={US:"🇺🇸",SG:"🇸🇬",NO:"🇳🇴",GR:"🇬🇷",JP:"🇯🇵",KR:"🇰🇷",IR:"🇮🇷"};
       const stColor=STATUS_COLOR[data.status]||"#94a3b8";
       content = (
@@ -918,14 +1023,18 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             </div>
             <span style={{background:"#070b10",border:`1px solid ${stColor}`,color:stColor,padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>{data.status?.toUpperCase()}</span>
           </div>
-          {imgSrc && <img src={imgSrc} alt={data.type} onError={e=>{e.target.style.display='none'}} style={{width:"100%",height:180,objectFit:"cover",display:"block",background:"#050a0f"}}/>}
+          {oEmbedHtml ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/> : <ImgBox src={fetchedImg} placeholder="⛴"/>}
           <div style={{padding:"12px 14px"}}>
             <div style={{background:"#08111a",border:"1px solid #1e2d3d",padding:"10px",marginBottom:8}}>
               <div style={{fontSize:10,color:"#8b9eb5",letterSpacing:1,marginBottom:4}}>CURRENT ROUTING</div>
               <div style={{fontSize:13,color:"#e2e8f0",fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5}}>{data.dest}</div>
             </div>
-            <div style={{background:"#08111a",border:"1px solid #1e3a4a",color:"#7dd3fc",padding:"8px 10px",fontSize:11,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5,letterSpacing:.5}}>
-              ▸ Strait of Hormuz remains CLOSED to commercial traffic since Day 3 of the conflict. All non-Iranian commercial vessels rerouting via Cape of Good Hope (+12 days transit).
+            <div style={{background:"#08111a",border:"1px solid #1e3a4a",color:"#7dd3fc",padding:"8px 10px",fontSize:11,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5,letterSpacing:.5,marginBottom:10}}>
+              ▸ Strait of Hormuz CLOSED since Day 3. Non-Iranian vessels rerouting Cape of Good Hope (+12 days transit).
+            </div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {wikiUrl && linkBtn(wikiUrl,"📖 Wikipedia")}
+              {linkBtn(`https://www.marinetraffic.com/en/ais/home/centerx:${data.lng}/centery:${data.lat}/zoom:8`,"🗺 MarineTraffic")}
             </div>
           </div>
         </div>
@@ -933,6 +1042,10 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
     } else if(type==='event') {
       const cfg=TYPE_CFG[data.type]||{color:"#94a3b8",label:"Event",icon:"●"};
       const ccfg=CONF_CFG[data.confidence]||{color:"#94a3b8",label:data.confidence};
+      const desc=(data.desc||'').toLowerCase();
+      const hasXRef=desc.includes('on x')||desc.includes('twitter')||desc.includes('circulating');
+      const newsQ=encodeURIComponent(data.title+' iran 2026');
+      const hasSatRef=desc.includes('satellite')||desc.includes('imagery')||desc.includes('crater');
       content = (
         <div>
           <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d"}}>
@@ -944,18 +1057,34 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             <div style={{fontFamily:"'Orbitron',monospace",fontSize:12,fontWeight:700,color:"#f8fafc",lineHeight:1.4}}>{data.title}</div>
             <div style={{fontSize:10,color:"#8b9eb5",marginTop:4,fontFamily:"'Share Tech Mono',monospace"}}>{data.date}</div>
           </div>
+          {oEmbedHtml
+            ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/>
+            : (fetchedImg||data.wikiPage) && <SatBlock
+                src={fetchedImg||''}
+                label="LOCATION IMAGERY · WIKIPEDIA"
+                coord={data.lat&&data.lng?`${data.lat.toFixed(2)}°N ${data.lng.toFixed(2)}°E`:null}/>}
           <div style={{padding:"12px 14px"}}>
             <div style={{fontSize:12,color:"#c8dae8",lineHeight:1.7,marginBottom:10}}>{data.desc}</div>
-            {data.verified && <div style={{display:"flex",alignItems:"center",gap:6,background:"#081a10",border:"1px solid #1e4a2a",padding:"6px 10px"}}>
+            {data.verified && <div style={{display:"flex",alignItems:"center",gap:6,background:"#081a10",border:"1px solid #1e4a2a",padding:"6px 10px",marginBottom:10}}>
               <span style={{color:"#22c55e",fontSize:14}}>✓</span>
               <span style={{fontSize:10,color:"#86efac",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>OSINT VERIFIED — Multiple independent sources confirmed</span>
             </div>}
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {linkBtn(`https://news.google.com/search?q=${newsQ}`,"🗞 Google News")}
+              {data.type==='us_il' && linkBtn('https://www.understandingwar.org/backgrounder/iran-update',"📊 ISW Report")}
+              {hasXRef && linkBtn(`https://x.com/search?q=${newsQ}`,"𝕏 Search X")}
+            </div>
           </div>
         </div>
       );
     } else if(type==='osint') {
       const chColor=tgColor(data.channel);
       const nation=tgNation(data.channel);
+      const chUrl=CHANNEL_LINKS[data.channel]||null;
+      const hasVideo=/(on x|on twitter|video|footage|circulating)/i.test(data.text||'');
+      const xQ=encodeURIComponent((data.text||'').slice(0,80));
+      const isPhoto=data.type==='photo';
+      const isVideo=data.type==='video';
       content = (
         <div>
           <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -968,14 +1097,33 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               {data.verified && <span style={{color:"#22c55e",fontSize:12,fontFamily:"'Share Tech Mono',monospace"}}>✓ VERIFIED</span>}
-              {data.type!=='text' && <span style={{background:"#1a1200",border:"1px solid #f59e0b44",color:"#f59e0b",padding:"2px 6px",fontSize:9,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>📎 {data.type?.toUpperCase()}</span>}
+              {!isPhoto && !isVideo && data.type!=='text' && <span style={{background:"#1a1200",border:"1px solid #f59e0b44",color:"#f59e0b",padding:"2px 6px",fontSize:9,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>📎 {data.type?.toUpperCase()}</span>}
             </div>
           </div>
+          {isPhoto && (oEmbedHtml
+            ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/>
+            : data.img && <SatBlock src={data.img} label="OPEN-SOURCE IMAGERY" coord={data.coord||null}/>)}
+          {isVideo && (oEmbedHtml
+            ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/>
+            : (
+              <div style={{height:150,background:"#050a0f",display:"flex",flexDirection:"column",
+                           alignItems:"center",justifyContent:"center",gap:10,
+                           borderBottom:"1px solid #1e2d3d"}}>
+                <div style={{width:50,height:50,borderRadius:"50%",border:"2px solid #f59e0b",
+                             display:"flex",alignItems:"center",justifyContent:"center",
+                             fontSize:22,color:"#f59e0b",paddingLeft:4}}>▶</div>
+                <span style={{color:"#f59e0b",fontSize:9,fontFamily:"'Share Tech Mono',monospace",letterSpacing:2}}>VIDEO INTELLIGENCE FEED</span>
+                <span style={{color:"#4a6070",fontSize:8,fontFamily:"'Share Tech Mono',monospace"}}>SOURCE: {data.channel}</span>
+              </div>
+            ))}
+          {!isPhoto && !isVideo && oEmbedHtml && <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/>}
           <div style={{padding:"12px 14px"}}>
             <div style={{fontSize:13,color:"#e2e8f0",lineHeight:1.8,marginBottom:10,fontFamily:"'Share Tech Mono',monospace",background:"#080e14",padding:"10px",border:"1px solid #1e2d3d"}}>{data.text}</div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span style={{fontSize:10,color:"#8b9eb5",fontFamily:"'Share Tech Mono',monospace"}}>👁 {(data.views||0).toLocaleString()} views</span>
-              <span style={{fontSize:9,color:"#4a6070",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>SOURCE: {data.channel}</span>
+            <div style={{fontSize:9,color:"#6080a0",fontFamily:"'Share Tech Mono',monospace",marginBottom:10}}>👁 {(data.views||0).toLocaleString()} views</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {chUrl && linkBtn(chUrl,"📡 Open Channel")}
+              {(hasVideo||isVideo) && linkBtn(`https://x.com/search?q=${xQ}`,"𝕏 Search Video on X")}
+              {linkBtn(`https://news.google.com/search?q=${encodeURIComponent((data.text||'').slice(0,60)+' iran 2026')}`,"🗞 Google News")}
             </div>
           </div>
         </div>
@@ -1033,46 +1181,46 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
 
       <DetailModal/>
 
-      {/* ═══ WORLD CLOCK BAR ═══ */}
-      <div style={{background:"#050a0f",borderBottom:"1px solid #0f1f2e",padding:"4px 16px",display:"flex",alignItems:"center",justifyContent:"space-evenly",flexShrink:0,gap:8}}>
-        {[
-          {city:"WASHINGTON DC", flag:"🇺🇸", tz:"America/New_York"},
-          {city:"LONDON", flag:"🇬🇧", tz:"Europe/London"},
-          {city:"TEHRAN", flag:"🇮🇷", tz:"Asia/Tehran"},
-        ].map(({city,flag,tz})=>(
-          <div key={tz} style={{display:"flex",alignItems:"center",gap:7}}>
-            <span style={{fontSize:14}}>{flag}</span>
-            <div>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:13,color:"#f8fafc",letterSpacing:1.5,lineHeight:1}}>{fmtCity(tz)}</div>
-              <div style={{fontSize:8,color:"#4a6a80",letterSpacing:1.5,textTransform:"uppercase",marginTop:1}}>{city} · {fmtDate(tz)}</div>
-            </div>
-          </div>
-        ))}
-        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:5}}>
-          <div className="pulse" style={{width:5,height:5,borderRadius:"50%",background:"#22c55e"}}/>
-          <span style={{fontSize:9,color:"#22c55e",fontFamily:"'Share Tech Mono',monospace",letterSpacing:2}}>UTC {time.toUTCString().split(" ")[4]}</span>
-        </div>
-      </div>
-
       {/* ═══ HEADER ═══ */}
-      <div style={{background:"#070b12",borderBottom:"1px solid #0c1824",padding:"7px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+      <div style={{background:"#070b12",borderBottom:"1px solid #0c1824",padding:"6px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <span style={{fontFamily:"'Orbitron',monospace",fontSize:17,fontWeight:900,color:"#ef4444",letterSpacing:4}}>⚔ WARWATCH</span>
           <span style={{background:"#200808",border:"1px solid #ef444488",color:"#ef4444",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:2}}>
             <span className="blink">●</span> LIVE
           </span>
-          <span style={{background:"#120d00",border:"1px solid #f59e0b55",color:"#f59e0b",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5}}>
+          <span style={{background:"#120d00",border:"1px solid #f59e0b55",color:"#f59e0b",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5,whiteSpace:"nowrap"}}>
             IRAN WAR 2026 · DAY {tDay+1} · OP EPIC FURY
           </span>
           {newAlert && (
-            <span style={{background:"#0a2016",border:"1px solid #22c55e88",color:"#22c55e",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5,animation:"alertPulse 1s ease-in-out infinite"}}>
+            <span style={{background:"#0a2016",border:"1px solid #22c55e88",color:"#22c55e",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5,animation:"alertPulse 1s ease-in-out infinite",whiteSpace:"nowrap"}}>
               ● NEW EVENTS LOADED
             </span>
           )}
         </div>
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
-          <button className="simbtn" onClick={()=>setSimMode(true)}><span style={{fontSize:15}}>▶</span> WATCH WAR SIMULATION</button>
-          <span style={{color:"#22c55e",fontWeight:700,fontFamily:"'Share Tech Mono',monospace",fontSize:12}}>{utcTime} UTC</span>
+        <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+          {/* City clock pills */}
+          {[
+            {label:"DC",  flag:"🇺🇸", tz:"America/New_York"},
+            {label:"LON", flag:"🇬🇧", tz:"Europe/London"},
+            {label:"TEH", flag:"🇮🇷", tz:"Asia/Tehran"},
+          ].map(({label,flag,tz})=>(
+            <div key={tz} style={{display:"flex",alignItems:"center",gap:5,background:"#080e14",border:"1px solid #1e2d3d",borderRadius:2,padding:"3px 8px"}}>
+              <span style={{fontSize:12,lineHeight:1}}>{flag}</span>
+              <div>
+                <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:12,color:"#22c55e",lineHeight:1,letterSpacing:1}}>{fmtCity(tz)}</div>
+                <div style={{fontSize:7,color:"#f8fafc",letterSpacing:1,textTransform:"uppercase",marginTop:1}}>{label} · {fmtDate(tz)}</div>
+              </div>
+            </div>
+          ))}
+          {/* UTC pill */}
+          <div style={{display:"flex",alignItems:"center",gap:5,background:"#08120a",border:"1px solid #1a3a22",borderRadius:2,padding:"3px 8px"}}>
+            <div className="pulse" style={{width:5,height:5,borderRadius:"50%",background:"#22c55e",flexShrink:0}}/>
+            <div>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:12,color:"#22c55e",lineHeight:1,letterSpacing:1}}>{utcTime}</div>
+              <div style={{fontSize:7,color:"#22c55e99",letterSpacing:1,textTransform:"uppercase",marginTop:1}}>UTC · ZULU</div>
+            </div>
+          </div>
+          <button className="simbtn" onClick={()=>setSimMode(true)}><span style={{fontSize:15}}>▶</span> WAR TIMELINE</button>
         </div>
       </div>
 
