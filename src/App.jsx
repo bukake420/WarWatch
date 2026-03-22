@@ -445,18 +445,18 @@ function WarSimulation({ onClose }) {
         {titleVisible&&isTitleScene&&(
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:1000,pointerEvents:"none"}}>
             <div style={{textAlign:"center",animation:"fadeInUp 0.6s ease-out"}}>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#ef4444",letterSpacing:3,marginBottom:16,opacity:0.8}}>TS/SCI // ORCON // NOFORN · CENTCOM J2 INTEL BRIEF · OPERATION EPIC FURY</div>
-              <div style={{fontFamily:"'Orbitron',monospace",fontSize:30,fontWeight:900,color:"#ef4444",letterSpacing:6,textShadow:"0 0 50px #ef444488, 0 0 100px #ef444422",marginBottom:14}}>{scene.title}</div>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:14,color:"#c8dae8",letterSpacing:2,lineHeight:2.1,maxWidth:540,textAlign:"center",whiteSpace:"pre-line"}}>{scene.subtitle}</div>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:satellite?"#111":"#ef4444",letterSpacing:3,marginBottom:16,opacity:0.8}}>TS/SCI // ORCON // NOFORN · CENTCOM J2 INTEL BRIEF · OPERATION EPIC FURY</div>
+              <div style={{fontFamily:"'Orbitron',monospace",fontSize:30,fontWeight:900,color:satellite?"#111":"#ef4444",letterSpacing:6,textShadow:satellite?"none":"0 0 50px #ef444488, 0 0 100px #ef444422",marginBottom:14}}>{scene.title}</div>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:14,color:satellite?"#333":"#c8dae8",letterSpacing:2,lineHeight:2.1,maxWidth:540,textAlign:"center",whiteSpace:"pre-line"}}>{scene.subtitle}</div>
             </div>
           </div>
         )}
         {/* Strike/impact event label — top center */}
         {titleVisible&&!isTitleScene&&!isStatsScene&&(
           <div style={{position:"absolute",top:20,left:"50%",transform:"translateX(-50%)",zIndex:1000,pointerEvents:"none",animation:"fadeInDown 0.4s ease-out"}}>
-            <div style={{background:"rgba(3,5,10,0.92)",border:`1px solid ${scene?.color||"#3b82f6"}66`,padding:"8px 22px",display:"flex",alignItems:"center",gap:10,boxShadow:`0 0 20px ${scene?.color||"#3b82f6"}22`}}>
+            <div style={{background:satellite?"rgba(255,255,255,0.92)":"rgba(3,5,10,0.92)",border:`1px solid ${scene?.color||"#3b82f6"}66`,padding:"8px 22px",display:"flex",alignItems:"center",gap:10,boxShadow:`0 0 20px ${scene?.color||"#3b82f6"}22`}}>
               <div style={{width:7,height:7,borderRadius:"50%",background:scene?.color||"#3b82f6",animation:"pulse 1s ease-in-out infinite",boxShadow:`0 0 8px ${scene?.color||"#3b82f6"}`}}/>
-              <span style={{fontFamily:"'Orbitron',monospace",fontSize:12,color:scene?.color||"#3b82f6",letterSpacing:3,fontWeight:700}}>DAY {scene?.day} · {scene?.label||"EVENT"}</span>
+              <span style={{fontFamily:"'Orbitron',monospace",fontSize:12,color:satellite?"#111":scene?.color||"#3b82f6",letterSpacing:3,fontWeight:700}}>DAY {scene?.day} · {scene?.label||"EVENT"}</span>
             </div>
           </div>
         )}
@@ -485,13 +485,13 @@ function WarSimulation({ onClose }) {
           </div>
         )}
         {/* Day counter — top right */}
-        <div style={{position:"absolute",top:16,right:16,zIndex:1000,background:"rgba(3,5,10,0.92)",border:"1px solid #1e2d3d",padding:"9px 16px",boxShadow:"0 0 20px rgba(0,0,0,0.5)"}}>
-          <div style={{fontFamily:"'Orbitron',monospace",fontSize:12,color:"#3b82f6",letterSpacing:2,fontWeight:700}}>DAY {scene?.day||0}</div>
-          <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:11,color:"#8ba8bc",marginTop:3}}>{dayToDate(scene?.day||0)}</div>
+        <div style={{position:"absolute",top:16,right:16,zIndex:1000,background:satellite?"rgba(255,255,255,0.92)":"rgba(3,5,10,0.92)",border:satellite?"1px solid #ccc":"1px solid #1e2d3d",padding:"9px 16px",boxShadow:"0 0 20px rgba(0,0,0,0.5)"}}>
+          <div style={{fontFamily:"'Orbitron',monospace",fontSize:12,color:satellite?"#111":"#3b82f6",letterSpacing:2,fontWeight:700}}>DAY {scene?.day||0}</div>
+          <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:11,color:satellite?"#555":"#8ba8bc",marginTop:3}}>{dayToDate(scene?.day||0)}</div>
         </div>
         {/* EXIT + SAT buttons — grouped top left */}
         <div style={{position:"absolute",top:16,left:16,zIndex:1100,display:"flex",gap:8}}>
-          <button onClick={onClose} style={{background:"rgba(3,5,10,0.92)",border:"1px solid #3a5060",color:"#a0b8c8",padding:"7px 14px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1}}>✕ EXIT</button>
+          <button onClick={onClose} style={{background:satellite?"rgba(255,255,255,0.92)":"rgba(3,5,10,0.92)",border:satellite?"1px solid #aaa":"1px solid #3a5060",color:satellite?"#111":"#a0b8c8",padding:"7px 14px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1}}>✕ EXIT</button>
           <button onClick={()=>setSatellite(s=>!s)} style={{background:satellite?"rgba(14,30,50,0.95)":"rgba(3,5,10,0.92)",border:`1px solid ${satellite?"#3b82f6":"#3a5060"}`,color:satellite?"#93c5fd":"#a0b8c8",padding:"7px 12px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1,boxShadow:satellite?"0 0 12px #3b82f633":"none"}}>🛰 SAT</button>
         </div>
       </div>
@@ -500,42 +500,42 @@ function WarSimulation({ onClose }) {
         <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:1200,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 24px"}}>
           <button onClick={()=>goToScene(sceneNum-1)} disabled={sceneNum===0}
             style={{pointerEvents:"all",background:"rgba(3,5,10,0.9)",border:`1px solid ${sceneNum===0?"#1e2d3d":"#3b82f6"}`,color:sceneNum===0?"#1e2d3d":"#3b82f6",width:54,height:54,cursor:sceneNum===0?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:24,display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s",boxShadow:sceneNum===0?"none":"0 0 20px #3b82f644"}}>‹</button>
-          <div style={{pointerEvents:"none",fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#5a7888",textAlign:"center",letterSpacing:3}}>PAUSED · USE ARROWS TO STEP</div>
+          <div style={{pointerEvents:"none",fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:satellite?"#111":"#5a7888",textAlign:"center",letterSpacing:3}}>PAUSED · USE ARROWS TO STEP</div>
           <button onClick={()=>goToScene(sceneNum+1)} disabled={sceneNum>=SIM_SCENES.length-1}
             style={{pointerEvents:"all",background:"rgba(3,5,10,0.9)",border:`1px solid ${sceneNum>=SIM_SCENES.length-1?"#1e2d3d":"#3b82f6"}`,color:sceneNum>=SIM_SCENES.length-1?"#1e2d3d":"#3b82f6",width:54,height:54,cursor:sceneNum>=SIM_SCENES.length-1?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:24,display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s",boxShadow:sceneNum>=SIM_SCENES.length-1?"none":"0 0 20px #3b82f644"}}>›</button>
         </div>
       )}
 
-      <div style={{background:"#060910",borderTop:"1px solid #0c1824",padding:"10px 20px",display:"flex",alignItems:"center",gap:14,flexShrink:0}}>
+      <div style={{background:satellite?"#f0f4f8":"#060910",borderTop:satellite?"1px solid #ccc":"1px solid #0c1824",padding:"10px 20px",display:"flex",alignItems:"center",gap:14,flexShrink:0}}>
         {/* Play/pause */}
         <button onClick={togglePlay} style={{background:playing?"rgba(59,130,246,0.12)":"transparent",border:`1px solid ${playing?"#3b82f6":"#1e3a5c"}`,color:"#3b82f6",width:36,height:30,cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:playing?"0 0 12px #3b82f633":"none",transition:"all .15s"}}>{playing?"⏸":"▶"}</button>
         {/* Restart */}
-        <button onClick={restart} style={{background:"transparent",border:"1px solid #1a2a3a",color:"#374151",width:28,height:28,cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>↩</button>
+        <button onClick={restart} style={{background:"transparent",border:satellite?"1px solid #bbb":"1px solid #1a2a3a",color:satellite?"#333":"#374151",width:28,height:28,cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>↩</button>
         {/* Step buttons */}
         <button onClick={()=>goToScene(sceneNum-1)} disabled={sceneNum===0}
-          style={{background:"transparent",border:"1px solid",borderColor:sceneNum===0?"#1a2a3a":"#1e3a5c",color:sceneNum===0?"#1e2d3d":"#4a7a9b",width:28,height:28,cursor:sceneNum===0?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+          style={{background:"transparent",border:"1px solid",borderColor:sceneNum===0?satellite?"#ccc":"#1a2a3a":satellite?"#999":"#1e3a5c",color:sceneNum===0?satellite?"#ccc":"#1e2d3d":satellite?"#333":"#4a7a9b",width:28,height:28,cursor:sceneNum===0?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
         <button onClick={()=>goToScene(sceneNum+1)} disabled={sceneNum>=SIM_SCENES.length-1}
-          style={{background:"transparent",border:"1px solid",borderColor:sceneNum>=SIM_SCENES.length-1?"#1a2a3a":"#1e3a5c",color:sceneNum>=SIM_SCENES.length-1?"#1e2d3d":"#4a7a9b",width:28,height:28,cursor:sceneNum>=SIM_SCENES.length-1?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>›</button>
+          style={{background:"transparent",border:"1px solid",borderColor:sceneNum>=SIM_SCENES.length-1?satellite?"#ccc":"#1a2a3a":satellite?"#999":"#1e3a5c",color:sceneNum>=SIM_SCENES.length-1?satellite?"#ccc":"#1e2d3d":satellite?"#333":"#4a7a9b",width:28,height:28,cursor:sceneNum>=SIM_SCENES.length-1?"not-allowed":"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>›</button>
         {/* Speed */}
         <div style={{display:"flex",gap:4,flexShrink:0}}>
           {[0.5,1,2].map(s=>(
-            <button key={s} onClick={()=>setSpeed(s)} style={{background:speed===s?"#0d1929":"transparent",border:"1px solid",borderColor:speed===s?"#3b82f6":"#1a2a3a",color:speed===s?"#93c5fd":"#374151",padding:"2px 8px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1,whiteSpace:"nowrap"}}>{s}x</button>
+            <button key={s} onClick={()=>setSpeed(s)} style={{background:speed===s?satellite?"#dde5f0":"#0d1929":"transparent",border:"1px solid",borderColor:speed===s?"#3b82f6":satellite?"#bbb":"#1a2a3a",color:speed===s?satellite?"#1a3a6c":"#93c5fd":satellite?"#333":"#374151",padding:"2px 8px",cursor:"pointer",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:1,whiteSpace:"nowrap"}}>{s}x</button>
           ))}
         </div>
         {/* Progress bar */}
-        <div style={{flex:1,position:"relative",height:6,background:"#0a1420",borderRadius:3}}>
+        <div style={{flex:1,position:"relative",height:6,background:satellite?"#ccd5e0":"#0a1420",borderRadius:3}}>
           <div style={{position:"absolute",left:0,top:0,height:"100%",background:"linear-gradient(to right,#1e3a5c,#3b82f6)",borderRadius:3,transition:"width 0.3s",width:`${progress}%`,boxShadow:"0 0 8px #3b82f644"}}/>
           {SIM_SCENES.map((sc,i)=>(
             <div key={i} onClick={()=>goToScene(i)} title={sc.label||sc.title||sc.type}
-              style={{position:"absolute",top:-4,left:`${(i/SIM_SCENES.length)*100}%`,width:2,height:14,background:i<=sceneNum?"#3b82f6":"#1e2d3d",cursor:"pointer",transform:"translateX(-50%)",transition:"background 0.2s"}}/>
+              style={{position:"absolute",top:-4,left:`${(i/SIM_SCENES.length)*100}%`,width:2,height:14,background:i<=sceneNum?"#3b82f6":satellite?"#aab5c0":"#1e2d3d",cursor:"pointer",transform:"translateX(-50%)",transition:"background 0.2s"}}/>
           ))}
         </div>
         {/* Scene counter */}
-        <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:"#7090a8",textAlign:"right",flexShrink:0,lineHeight:1.7}}>
-          <div style={{color:"#3b82f6"}}>{sceneNum+1} / {SIM_SCENES.length}</div>
-          <div style={{color:"#5a7888"}}>~5 min</div>
+        <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:satellite?"#444":"#7090a8",textAlign:"right",flexShrink:0,lineHeight:1.7}}>
+          <div style={{color:satellite?"#1a3a6c":"#3b82f6"}}>{sceneNum+1} / {SIM_SCENES.length}</div>
+          <div style={{color:satellite?"#666":"#5a7888"}}>~5 min</div>
         </div>
-        <div style={{fontFamily:"'Orbitron',monospace",fontSize:13,fontWeight:700,color:"#ef4444",letterSpacing:3,flexShrink:0,textShadow:"0 0 15px #ef444444"}}>⚔ WARWATCH</div>
+        <div style={{fontFamily:"'Orbitron',monospace",fontSize:13,fontWeight:700,color:satellite?"#000":"#ef4444",letterSpacing:3,flexShrink:0,textShadow:satellite?"none":"0 0 15px #ef444444"}}>⚔ WAR TIMELINE</div>
       </div>
     </div>
   );
@@ -1194,7 +1194,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
               <div style={{fontSize:7,color:"#22c55e99",letterSpacing:1,textTransform:"uppercase",marginTop:1}}>UTC · ZULU</div>
             </div>
           </div>
-          <button className="simbtn" onClick={()=>setSimMode(true)}><span style={{fontSize:15}}>▶</span> WATCH WAR SIMULATION</button>
+          <button className="simbtn" onClick={()=>setSimMode(true)}><span style={{fontSize:15}}>▶</span> WAR TIMELINE</button>
         </div>
       </div>
 
