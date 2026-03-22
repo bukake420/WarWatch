@@ -1,8 +1,8 @@
 const CACHE_TTL = 60_000; // 1 minute cache
 let cache = null, cacheTs = 0;
 
-// Bounding box for Middle East conflict zone
-const BBOX = { lamin: 12, lomin: 25, lamax: 42, lomax: 75 };
+// Bounding box: Europe + Middle East + North Africa (wide net to ensure coverage)
+const BBOX = { lamin: 5, lomin: -10, lamax: 65, lomax: 95 };
 
 // Normalize an adsb.lol aircraft object
 function fromAdsbLol(ac) {
@@ -50,8 +50,8 @@ function flagToCountry(flags) {
 }
 
 async function fetchAdsbLol() {
-  // Center of Middle East ~28°N 50°E, 1800nm covers Israel→Pakistan, Turkey→Yemen
-  const url = 'https://api.adsb.lol/v2/lat/28/lon/50/dist/1800';
+  // Center on Eastern Mediterranean; 4000nm radius covers Europe → India
+  const url = 'https://api.adsb.lol/v2/lat/40/lon/30/dist/4000';
   const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!resp.ok) throw new Error(`adsb.lol ${resp.status}`);
   const data = await resp.json();
