@@ -24,6 +24,12 @@ const BASE_EVENTS = [
   { id:20, lat:25.1222, lng:56.3367, title:"Fujairah, UAE — Oil Zone Attack",        type:"iran",      date:"2026-03-18", confidence:"confirmed", desc:"Drone attack ignited fire in UAE oil industry zone. Debris killed one Pakistani national in Abu Dhabi.", verified:true },
   { id:21, lat:33.1000, lng:35.6333, title:"Nahariya — Hezbollah Attack",            type:"hezbollah", date:"2026-03-17", confidence:"confirmed", desc:"Hezbollah launched attack on northern Israel. One man wounded. 1M+ Lebanese displaced.", verified:true },
   { id:22, lat:24.6877, lng:46.7219, title:"Riyadh — Saudi Intercepts",              type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Saudi Arabia intercepting Iranian missiles in own airspace. KSA says 'trust gone.'", verified:true },
+  { id:23, lat:26.5500, lng:56.3000, title:"Strait of Hormuz — IRGC Drone Swarm Repelled", type:"us_il", date:"2026-03-21", confidence:"confirmed", desc:"USS Gerald R. Ford CSG CIWS engaged a swarm of ~40 IRGC kamikaze drones in the Strait of Hormuz. All destroyed. No US casualties. Iran's 4th attempt to strike the carrier group.", verified:true },
+  { id:24, lat:35.3000, lng:47.0000, title:"Kermanshah — Final SAM Sites Destroyed", type:"us_il",     date:"2026-03-21", confidence:"confirmed", desc:"CENTCOM confirms last known operational Iranian surface-to-air missile batteries near Kermanshah destroyed. Iran's air defense now assessed as critically degraded across all regions.", verified:true },
+  { id:25, lat:35.6892, lng:51.3890, title:"Tehran — Nowruz Protests Dispersed",    type:"iran",      date:"2026-03-21", confidence:"reported",  desc:"Iranians took to Tehran streets on Nowruz (Persian New Year) demanding ceasefire. IRGC and Basij dispersed crowds using tear gas and water cannons. At least 12 arrested. Video circulating on X.", verified:false },
+  { id:26, lat:23.6140, lng:58.5922, title:"Muscat, Oman — Indirect Ceasefire Talks Begin", type:"us_il", date:"2026-03-22", confidence:"confirmed", desc:"Oman Foreign Minister Badr Al-Busaidi hosting separate meetings with US Special Envoy and Iranian Deputy FM. First indirect contact since war began. No ceasefire imminent but both sides acknowledge talks.", verified:true },
+  { id:27, lat:29.3759, lng:47.9774, title:"Kuwait — US Embassy Attack Thwarted",   type:"iran",      date:"2026-03-22", confidence:"confirmed", desc:"Kuwaiti intelligence foiled an IRGC-linked plot to attack the US Embassy in Kuwait City. Three suspects arrested. Iran denies involvement. US issues Level 4 travel alert for the Gulf region.", verified:true },
+  { id:28, lat:36.2021, lng:37.1343, title:"Aleppo, Syria — IRGC Proxy Strike on US Base", type:"iran", date:"2026-03-22", confidence:"reported", desc:"Rockets fired at Qamishli US outpost in NE Syria, attributed to IRGC-backed militia. No US casualties. F-15s conducted retaliatory strike on militia positions within 2 hours. CENTCOM confirms.", verified:true },
 ];
 
 // ─── Static leadership posts (always visible, no API needed) ─────────────────
@@ -43,6 +49,11 @@ const LEADERSHIP_POSTS = [
   { id:13, person:"Benjamin Netanyahu", role:"Israeli PM",                  country:"🇮🇱", platform:"X",            handle:"@netanyahu",       date:"2026-03-20", time:"20:30", color:"#3b82f6", verified:true, text:"To the Persian people on Nowruz — the new year: we wish you a future of freedom, democracy, and peace. The regime that oppressed you is crumbling. Very soon, you will be able to celebrate freely. Am Yisrael Chai." },
   { id:14, person:"Donald Trump",       role:"US President",                country:"🇺🇸", platform:"Truth Social", handle:"@realDonaldTrump", date:"2026-03-10", time:"09:00", color:"#ef4444", verified:true, text:"Who knows better about SURPRISE than Japan? I said to PM Takaichi — 'Why didn't you tell me about Pearl Harbor?' (jokingly of course!) The element of surprise won World War II and it is working BEAUTIFULLY in Iran. Our military is the greatest in history!" },
   { id:15, person:"Scott Bessent",      role:"US Treasury Secretary",       country:"🇺🇸", platform:"X",            handle:"@ScottBessent",   date:"2026-03-19", time:"17:20", color:"#ef4444", verified:true, text:"We are considering unsanctioning Iranian crude oil currently in transit to ease global energy markets. The administration is committed to minimizing economic disruption while achieving our strategic objectives in Iran. Oil prices should stabilize." },
+  { id:16, person:"Donald Trump",       role:"US President",                country:"🇺🇸", platform:"Truth Social", handle:"@realDonaldTrump", date:"2026-03-21", time:"10:15", color:"#ef4444", verified:true, text:"Happy Nowruz to the great Persian people! You deserve FREEDOM and soon you will have it. The evil regime that has oppressed you for 47 years is FINISHED. We are talking to people — good things are happening. Stay strong, beautiful Iran. The best days are ahead!" },
+  { id:17, person:"Benjamin Netanyahu", role:"Israeli PM",                  country:"🇮🇱", platform:"X",            handle:"@netanyahu",       date:"2026-03-21", time:"18:00", color:"#3b82f6", verified:true, text:"نوروز پیروز — Nowruz Piruz. To the Persian people: may this new year bring you the freedom your ancient civilization deserves. The IDF has completed 90% of its objectives. The regime that threatened to wipe us out is crumbling. Chag sameach." },
+  { id:18, person:"Mojtaba Khamenei",   role:"Iranian Supreme Leader",      country:"🇮🇷", platform:"State Media",  handle:"@Khamenei_ir",    date:"2026-03-21", time:"22:30", color:"#22c55e", verified:true, text:"On this Nowruz, Iran bleeds but does not break. We have agreed to explore indirect talks via Oman — not out of weakness, but to expose American hypocrisy to the world. Iran will not negotiate under bombs. All strikes must cease before any framework can be discussed. This is our condition." },
+  { id:19, person:"Emmanuel Macron",    role:"French President",             country:"🇫🇷", platform:"X",            handle:"@EmmanuelMacron", date:"2026-03-22", time:"09:30", color:"#60a5fa", verified:true, text:"France welcomes indirect talks in Muscat. This is the first positive signal in 23 days of war. The EU stands ready to provide a diplomatic framework for a sustainable ceasefire. We call on the US to pause strikes during negotiations. Europe cannot absorb another week of Hormuz closure." },
+  { id:20, person:"Pete Hegseth",       role:"US Secretary of Defense",     country:"🇺🇸", platform:"X",            handle:"@PeteHegseth",    date:"2026-03-22", time:"14:45", color:"#ef4444", verified:true, text:"No pause in operations. Talks in Oman are separate from military objectives. We will continue striking valid military targets until Iran meets our conditions: full cessation of proxy attacks, surrender of enriched uranium stockpiles, and opening of Hormuz. Diplomacy and deterrence go hand in hand." },
 ];
 
 const SIM_SCENES = [
@@ -113,7 +124,7 @@ const CONF_CFG = {
 const ROLE_COLOR = { Strike:"#ef4444",Tanker:"#22c55e",AWACS:"#a855f7",ISR:"#f59e0b",Transport:"#60a5fa",Maritime:"#06b6d4" };
 const STATUS_COLOR = { diverted:"#f59e0b",waiting:"#60a5fa",blocked:"#ef4444",active:"#22c55e" };
 const WAR_START = new Date("2026-02-28");
-const MAX_DAY = 21;
+const MAX_DAY = 23;
 const TG_CHANNELS = [
   { handle:"@IDFSpokesperson",color:"#3b82f6",nation:"🇮🇱" },
   { handle:"@IRNA_NEWS",      color:"#22c55e",nation:"🇮🇷" },
@@ -124,14 +135,14 @@ const TG_CHANNELS = [
 ];
 
 const STATS_DATA = [
-  { label:"War Day",             value:"21",     color:"#60a5fa" },
-  { label:"Confirmed Strikes",   value:"115+",   color:"#ef4444" },
+  { label:"War Day",             value:"23",     color:"#60a5fa" },
+  { label:"Confirmed Strikes",   value:"130+",   color:"#ef4444" },
   { label:"Launchers Destroyed", value:"300+",   color:"#f59e0b" },
-  { label:"Killed (Iran)",       value:"1,400+", color:"#ef4444" },
-  { label:"Injured (Iran)",      value:"18K+",   color:"#f59e0b" },
-  { label:"Displaced",           value:"3M+",    color:"#f59e0b" },
+  { label:"Killed (Iran)",       value:"1,700+", color:"#ef4444" },
+  { label:"Injured (Iran)",      value:"21K+",   color:"#f59e0b" },
+  { label:"Displaced",           value:"3.4M+",  color:"#f59e0b" },
   { label:"Hormuz Status",       value:"CLOSED", color:"#ef4444" },
-  { label:"Missile Fire",        value:"↓ 90%",  color:"#22c55e" },
+  { label:"Missile Fire",        value:"↓ 94%",  color:"#22c55e" },
 ];
 
 const dayToDate = d => { const dt=new Date(WAR_START); dt.setDate(dt.getDate()+d); return dt.toLocaleDateString("en-US",{month:"short",day:"numeric"}); };
@@ -564,9 +575,9 @@ export default function WarWatch() {
   },[tDay,leaderFilter]);
 
   const dayCasualties = useMemo(()=>({
-    killed:Math.round(1400*(tDay/MAX_DAY)),
-    injured:Math.round(18000*(tDay/MAX_DAY)),
-    displaced:Math.round(3000000*(tDay/MAX_DAY)),
+    killed:Math.round(1700*(tDay/MAX_DAY)),
+    injured:Math.round(21000*(tDay/MAX_DAY)),
+    displaced:Math.round(3400000*(tDay/MAX_DAY)),
   }),[tDay]);
 
   useEffect(()=>{
@@ -723,18 +734,18 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
       const now=new Date();
       const t=(offsetMin)=>{const d=new Date(now-offsetMin*60000);return `${String(d.getUTCHours()).padStart(2,"0")}:${String(d.getUTCMinutes()).padStart(2,"0")}`;};
       setTgItems([
-        {channel:"@IDFSpokesperson",time:t(95),text:"IDF confirms overnight strikes on IRGC missile storage facilities in western Iran. 4 launchers destroyed. No IDF casualties.",views:142300,type:"text",verified:true},
-        {channel:"@CENTCOMNews",time:t(80),text:"U.S. Central Command: Combined force conducted precision strikes on Iranian military infrastructure overnight. Operations are ongoing and meeting objectives.",views:89200,type:"text",verified:true},
-        {channel:"@IRNA_NEWS",time:t(70),text:"The Islamic Republic condemns the latest Zionist-American aggression against our sovereign territory. The resistance will respond with force.",views:67800,type:"text",verified:false},
-        {channel:"@OSINTdefender",time:t(58),text:"NEW: Planet Labs imagery from this morning shows significant damage to IRGC facility near Kermanshah. At least 3 launcher pads destroyed. Comparing to yesterday's imagery now.",views:234100,type:"photo",verified:true},
-        {channel:"@IntelDoge",time:t(47),text:"BREAKING: Multiple explosions reported in Tehran suburbs. Not yet confirmed. Monitoring.",views:412000,type:"text",verified:false},
-        {channel:"@HouthiMilSpo",time:t(40),text:"The Yemeni armed forces fired 6 ballistic missiles toward occupied Eilat. All of occupied Palestine is within range. The resistance front stands unified.",views:55600,type:"text",verified:false},
-        {channel:"@IDFSpokesperson",time:t(30),text:"⚠️ Rocket alert in northern Israel. Residents in the following areas should remain in shelters. Arrow interception activated.",views:318000,type:"text",verified:true},
-        {channel:"@OSINTdefender",time:t(22),text:"Tracking 2 likely USAF B-52 signatures on ADS-B heading NW from Diego Garcia. This is the 4th such sortie in 72 hours. Thread incoming.",views:189700,type:"text",verified:true},
-        {channel:"@IRNA_NEWS",time:t(15),text:"President Pezeshkian: Iran does not seek war but will defend every inch of its territory. The aggressor will pay a price history will record.",views:78900,type:"text",verified:true},
-        {channel:"@IntelDoge",time:t(10),text:"Reuters confirming Hormuz now day 19 closed. Tanker diversion costs up 340%. Saudi Aramco exec quoted saying 'situation is critical'.",views:521000,type:"text",verified:true},
-        {channel:"@CENTCOMNews",time:t(5),text:"USS Gerald R. Ford Carrier Strike Group conducting flight operations in the Arabian Sea in support of Operation Epic Fury. Air wing is mission-ready.",views:94300,type:"photo",verified:true},
-        {channel:"@IntelDoge",time:t(1),text:"Multiple sources: large explosion near Natanz. No official confirmation yet. 3rd report in last hour. Monitoring closely.",views:687000,type:"text",verified:false},
+        {channel:"@OSINTdefender",time:t(95),text:"DAY 23 UPDATE: Oman FM confirms indirect US-Iran talks underway in Muscat. US envoy and Iranian Deputy FM meeting separately. No joint sessions. Oman playing honest broker role. This is significant — first contact since war began.",views:412000,type:"text",verified:true},
+        {channel:"@IDFSpokesperson",time:t(80),text:"IDF overnight strikes targeted remaining IRGC command nodes in Khuzestan province. 3 facilities confirmed destroyed. Iran's operational military command in the southwest is now severely degraded. No IDF casualties.",views:218400,type:"text",verified:true},
+        {channel:"@CENTCOMNews",time:t(68),text:"CENTCOM: US forces repelled a 40-drone IRGC swarm attack on USS Gerald R. Ford in the Strait of Hormuz overnight. All threats neutralized by CIWS and SM-6. Zero US casualties. Iran has now made 4 unsuccessful attempts against the CSG.",views:156700,type:"text",verified:true},
+        {channel:"@IRNA_NEWS",time:t(55),text:"The Supreme Leader has authorized indirect talks in Muscat from a position of strength, not weakness. Iran's conditions are clear: full cessation of strikes, lifting of new sanctions, and written guarantees. We will not accept humiliation.",views:89200,type:"text",verified:false},
+        {channel:"@IntelDoge",time:t(42),text:"BREAKING: Kuwaiti interior ministry confirms arrest of 3 IRGC-linked suspects in plot to attack US Embassy in Kuwait City. IEDs and surveillance equipment seized. Kuwait summons Iranian ambassador.",views:634000,type:"text",verified:true},
+        {channel:"@OSINTdefender",time:t(35),text:"Sentinel-2 imagery from this morning: Kharg Island fires STILL burning — Day 22. Significant damage to tank farm. Only 2 of 9 loading berths appear operational. Iran's oil export capacity at ~12% of pre-war levels. Thread with imagery 👇",views:287000,type:"photo",verified:true},
+        {channel:"@HouthiMilSpo",time:t(28),text:"The Yemeni armed forces salute the brave Iranian people who took to the streets on Nowruz demanding dignity. We have fired 3 ballistic missiles at Ben Gurion airport in solidarity with the resistance. The Zionist entity has no safe skies.",views:43200,type:"text",verified:false},
+        {channel:"@IntelDoge",time:t(19),text:"Aleppo source: rockets hit US outpost at Qamishli ~2hrs ago. IRGC-linked militia claimed. CENTCOM yet to confirm but F-15s seen departing Incirlik at speed. Day 23 expanding beyond Iran proper.",views:521000,type:"text",verified:false},
+        {channel:"@IDFSpokesperson",time:t(12),text:"The IDF has struck 130+ military targets since Feb 28. Iran's ballistic missile fire has dropped 94%. We are close to achieving our stated objectives. The talks in Muscat do not change IDF operational plans — we continue until the mission is complete.",views:318000,type:"text",verified:true},
+        {channel:"@IRNA_NEWS",time:t(7),text:"Brent crude at $131.40. The American aggression against Iranian infrastructure has cost the global economy $2.3 trillion in 23 days. The world will hold Washington accountable.",views:67800,type:"text",verified:false},
+        {channel:"@CENTCOMNews",time:t(4),text:"Secretary Hegseth: Operations continue. Diplomacy and deterrence are not mutually exclusive. We will strike valid military targets until Iran meets our three conditions. The Oman channel is Iran's off-ramp — we hope they take it.",views:94300,type:"text",verified:true},
+        {channel:"@OSINTdefender",time:t(1),text:"JUST IN: Multiple SIGINT sources indicate large Iranian naval movement in the Gulf of Oman — possibly positioning for another drone swarm attempt on Ford CSG, or a show of force ahead of Muscat talks. Watching closely.",views:687000,type:"text",verified:false},
       ]);
     }
     setTgLoad(false);
