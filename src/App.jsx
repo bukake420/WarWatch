@@ -53,33 +53,33 @@ const CHANNEL_LINKS = {
 
 // ─── Base events (always shown; /api/events overlays live data on top) ────────
 const BASE_EVENTS = [
-  { id:1,  lat:35.6892, lng:51.3890, title:"Tehran — IRGC HQ & Palace Complex",      type:"us_il",     date:"2026-03-20", confidence:"confirmed", desc:"Large explosions near Saadabad Palace complex. Series of strikes on military C2 infrastructure. IRGC confirms multiple sites hit.", verified:true },
-  { id:2,  lat:35.7500, lng:51.4200, title:"Tehran — Khamenei Killed (Day 1)",        type:"hvt",       date:"2026-02-28", confidence:"confirmed", desc:"Supreme Leader Ali Khamenei killed in Israeli airstrike. Confirmed by IRIB, Fars News, Trump, and Netanyahu. Son Mojtaba named successor.", verified:true },
-  { id:3,  lat:35.6892, lng:51.3890, title:"Tehran — Larijani Assassinated",          type:"hvt",       date:"2026-03-17", confidence:"confirmed", desc:"Israel assassinated Ali Larijani, Secretary of Iran's Supreme National Security Council. IRGC vowed 'zero restraint' in response.", verified:true },
-  { id:4,  lat:38.0962, lng:46.2738, title:"Tabriz — 2nd Artesh Airbase Cratered",   type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery: 11 craters on runway of 2nd Artesh Air Force Tactical Airbase. Rendered inoperable. IAF destroyed F-4 and two F-5s.", verified:true },
-  { id:5,  lat:37.4000, lng:47.0000, title:"Tabriz — 6th Artesh Aviation Base",      type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery shows damaged logistics facility near 6th Artesh Ground Forces Aviation Base.", verified:true },
-  { id:6,  lat:29.5918, lng:52.5837, title:"Shiraz — 7th Artesh Airbase",            type:"us_il",     date:"2026-03-02", confidence:"confirmed", desc:"Satellite imagery: two craters and damaged building in southern section of 7th Artesh Air Force Tactical Airbase.", verified:true },
-  { id:7,  lat:32.6546, lng:51.6680, title:"Isfahan — Nuclear & Air Defense Sites",  type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Opening US strike package targeted nuclear facilities and air defense near Isfahan. GBU-57 bunker-busters deployed.", verified:true },
-  { id:8,  lat:33.7244, lng:51.7252, title:"Natanz — Enrichment Facility",           type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Natanz uranium enrichment facility targeted in Day 1 strikes. IAEA reported 460kg of 60% enriched uranium on site.", verified:true },
-  { id:9,  lat:29.2569, lng:50.3243, title:"Kharg Island — Oil Export Terminal",     type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"US/Israeli strikes on Kharg Island, Iran's primary oil export terminal.", verified:true },
-  { id:10, lat:27.1500, lng:52.6000, title:"South Pars — Gas Field Strike",          type:"us_il",     date:"2026-03-18", confidence:"confirmed", desc:"Israel struck South Pars gasfield, Iran's largest natural gas reserve. Iran warned 'zero restraint'.", verified:true },
-  { id:11, lat:34.3277, lng:47.0650, title:"Kermanshah — Missile Launchers",         type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"300+ Iranian ballistic missile launchers destroyed across Iran by Mar 3. Iranian missile fire dropped ~90% by day 10.", verified:true },
-  { id:12, lat:34.6416, lng:50.8746, title:"Arak — Civilian Strike",                 type:"us_il",     date:"2026-03-17", confidence:"confirmed", desc:"3-day-old infant and 2-year-old sister killed in strike on residential home in Arak. Mother and grandmother also killed.", verified:true },
-  { id:13, lat:27.1500, lng:57.0833, title:"Minab — Girls School (170+ Dead)",       type:"us_il",     date:"2026-03-10", confidence:"confirmed", desc:"Deadliest single incident. Airstrike on elementary girls' school in Minab killed 170+. Confirmed by Amnesty International.", verified:true },
-  { id:14, lat:31.7517, lng:34.9896, title:"Beit Shemesh — 9 Civilians Killed",      type:"iran",      date:"2026-03-01", confidence:"confirmed", desc:"Deadliest Iranian strike on Israel. Ballistic missile hit residential neighborhood, killing 9 civilians.", verified:true },
-  { id:15, lat:32.0786, lng:34.8207, title:"Ramat Gan — Cluster Warhead",            type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iranian cluster warhead killed two residents in their 70s. IRGC called it 'revenge for Larijani.'", verified:true },
-  { id:16, lat:32.7940, lng:34.9896, title:"Haifa — Iranian Retaliatory Strike",     type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Haifa in retaliation for South Pars attack. Arrow system intercepted majority of barrage.", verified:true },
-  { id:17, lat:31.8928, lng:35.0266, title:"Ben Gurion Airport — Hit",               type:"iran",      date:"2026-03-15", confidence:"confirmed", desc:"Missile struck three private planes on tarmac. Israeli authorities capped outbound flights at 130 passengers.", verified:true },
-  { id:18, lat:31.7683, lng:35.2137, title:"Jerusalem — Holy Site Debris",           type:"iran",      date:"2026-03-17", confidence:"confirmed", desc:"Missile fragments found near Al-Aqsa Mosque and Church of Holy Sepulchre. No casualties.", verified:true },
-  { id:19, lat:25.9000, lng:51.5500, title:"Ras Laffan, Qatar — LNG Terminal Hit",  type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Qatar's LNG export hub. 13 of 14 ballistic missiles intercepted.", verified:true },
-  { id:20, lat:25.1222, lng:56.3367, title:"Fujairah, UAE — Oil Zone Attack",        type:"iran",      date:"2026-03-18", confidence:"confirmed", desc:"Drone attack ignited fire in UAE oil industry zone. Debris killed one Pakistani national in Abu Dhabi.", verified:true },
-  { id:21, lat:33.1000, lng:35.6333, title:"Nahariya — Hezbollah Attack",            type:"hezbollah", date:"2026-03-17", confidence:"confirmed", desc:"Hezbollah launched attack on northern Israel. One man wounded. 1M+ Lebanese displaced.", verified:true },
-  { id:22, lat:24.6877, lng:46.7219, title:"Riyadh — Saudi Intercepts",              type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Saudi Arabia intercepting Iranian missiles in own airspace. KSA says 'trust gone.'", verified:true },
-  { id:23, lat:26.5500, lng:56.3000, title:"Strait of Hormuz — IRGC Drone Swarm Repelled", type:"us_il", date:"2026-03-21", confidence:"confirmed", desc:"USS Gerald R. Ford CSG CIWS engaged a swarm of ~40 IRGC kamikaze drones in the Strait of Hormuz. All destroyed. No US casualties. Iran's 4th attempt to strike the carrier group.", verified:true },
-  { id:24, lat:35.3000, lng:47.0000, title:"Kermanshah — Final SAM Sites Destroyed", type:"us_il",     date:"2026-03-21", confidence:"confirmed", desc:"CENTCOM confirms last known operational Iranian surface-to-air missile batteries near Kermanshah destroyed. Iran's air defense now assessed as critically degraded across all regions.", verified:true },
-  { id:25, lat:35.6892, lng:51.3890, title:"Tehran — Nowruz Protests Dispersed",    type:"iran",      date:"2026-03-21", confidence:"reported",  desc:"Iranians took to Tehran streets on Nowruz (Persian New Year) demanding ceasefire. IRGC and Basij dispersed crowds using tear gas and water cannons. At least 12 arrested. Video circulating on X.", verified:false },
-  { id:26, lat:23.6140, lng:58.5922, title:"Muscat, Oman — Indirect Ceasefire Talks Begin", type:"us_il", date:"2026-03-22", confidence:"confirmed", desc:"Oman Foreign Minister Badr Al-Busaidi hosting separate meetings with US Special Envoy and Iranian Deputy FM. First indirect contact since war began. No ceasefire imminent but both sides acknowledge talks.", verified:true },
-  { id:27, lat:29.3759, lng:47.9774, title:"Kuwait — US Embassy Attack Thwarted",   type:"iran",      date:"2026-03-22", confidence:"confirmed", desc:"Kuwaiti intelligence foiled an IRGC-linked plot to attack the US Embassy in Kuwait City. Three suspects arrested. Iran denies involvement. US issues Level 4 travel alert for the Gulf region.", verified:true },
+  { id:1,  lat:35.6892, lng:51.3890, title:"Tehran — IRGC HQ & Palace Complex",      type:"us_il",     date:"2026-03-20", confidence:"confirmed", desc:"Large explosions near Saadabad Palace complex. Series of strikes on military C2 infrastructure. IRGC confirms multiple sites hit.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Sa%27dabad_Palace.jpg/400px-Sa%27dabad_Palace.jpg" },
+  { id:2,  lat:35.7500, lng:51.4200, title:"Tehran — Khamenei Killed (Day 1)",        type:"hvt",       date:"2026-02-28", confidence:"confirmed", desc:"Supreme Leader Ali Khamenei killed in Israeli airstrike. Confirmed by IRIB, Fars News, Trump, and Netanyahu. Son Mojtaba named successor.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Ali_Khamenei_%28cropped%29.jpg/280px-Ali_Khamenei_%28cropped%29.jpg" },
+  { id:3,  lat:35.6892, lng:51.3890, title:"Tehran — Larijani Assassinated",          type:"hvt",       date:"2026-03-17", confidence:"confirmed", desc:"Israel assassinated Ali Larijani, Secretary of Iran's Supreme National Security Council. IRGC vowed 'zero restraint' in response.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Ali_Larijani.jpg/280px-Ali_Larijani.jpg" },
+  { id:4,  lat:38.0962, lng:46.2738, title:"Tabriz — 2nd Artesh Airbase Cratered",   type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery: 11 craters on runway of 2nd Artesh Air Force Tactical Airbase. Rendered inoperable. IAF destroyed F-4 and two F-5s.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Tabriz_from_above.jpg/400px-Tabriz_from_above.jpg" },
+  { id:5,  lat:37.4000, lng:47.0000, title:"Tabriz — 6th Artesh Aviation Base",      type:"us_il",     date:"2026-03-03", confidence:"confirmed", desc:"Satellite imagery shows damaged logistics facility near 6th Artesh Ground Forces Aviation Base.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Tabriz_from_above.jpg/400px-Tabriz_from_above.jpg" },
+  { id:6,  lat:29.5918, lng:52.5837, title:"Shiraz — 7th Artesh Airbase",            type:"us_il",     date:"2026-03-02", confidence:"confirmed", desc:"Satellite imagery: two craters and damaged building in southern section of 7th Artesh Air Force Tactical Airbase.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Eram_Garden%2C_Shiraz.jpg/400px-Eram_Garden%2C_Shiraz.jpg" },
+  { id:7,  lat:32.6546, lng:51.6680, title:"Isfahan — Nuclear & Air Defense Sites",  type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Opening US strike package targeted nuclear facilities and air defense near Isfahan. GBU-57 bunker-busters deployed.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Isfahan_Nuclear_Technology_Center.jpg/400px-Isfahan_Nuclear_Technology_Center.jpg" },
+  { id:8,  lat:33.7244, lng:51.7252, title:"Natanz — Enrichment Facility",           type:"us_il",     date:"2026-02-28", confidence:"confirmed", desc:"Natanz uranium enrichment facility targeted in Day 1 strikes. IAEA reported 460kg of 60% enriched uranium on site.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Natanz_nuclear_facility.jpg/400px-Natanz_nuclear_facility.jpg" },
+  { id:9,  lat:29.2569, lng:50.3243, title:"Kharg Island — Oil Export Terminal",     type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"US/Israeli strikes on Kharg Island, Iran's primary oil export terminal.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/KhargIsland.jpg/400px-KhargIsland.jpg" },
+  { id:10, lat:27.1500, lng:52.6000, title:"South Pars — Gas Field Strike",          type:"us_il",     date:"2026-03-18", confidence:"confirmed", desc:"Israel struck South Pars gasfield, Iran's largest natural gas reserve. Iran warned 'zero restraint'.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/South_Pars_Gas_Field%2C_Iran.jpg/400px-South_Pars_Gas_Field%2C_Iran.jpg" },
+  { id:11, lat:34.3277, lng:47.0650, title:"Kermanshah — Missile Launchers",         type:"us_il",     date:"2026-03-01", confidence:"confirmed", desc:"300+ Iranian ballistic missile launchers destroyed across Iran by Mar 3. Iranian missile fire dropped ~90% by day 10.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Shahab-3.jpg/400px-Shahab-3.jpg" },
+  { id:12, lat:34.6416, lng:50.8746, title:"Arak — Civilian Strike",                 type:"us_il",     date:"2026-03-17", confidence:"confirmed", desc:"3-day-old infant and 2-year-old sister killed in strike on residential home in Arak. Mother and grandmother also killed.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/IR-40_heavy_water_reactor%2C_Arak%2C_Iran.jpg/400px-IR-40_heavy_water_reactor%2C_Arak%2C_Iran.jpg" },
+  { id:13, lat:27.1500, lng:57.0833, title:"Minab — Girls School (170+ Dead)",       type:"us_il",     date:"2026-03-10", confidence:"confirmed", desc:"Deadliest single incident. Airstrike on elementary girls' school in Minab killed 170+. Confirmed by Amnesty International.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Hormozgan_Province%2C_Iran.jpg/400px-Hormozgan_Province%2C_Iran.jpg" },
+  { id:14, lat:31.7517, lng:34.9896, title:"Beit Shemesh — 9 Civilians Killed",      type:"iran",      date:"2026-03-01", confidence:"confirmed", desc:"Deadliest Iranian strike on Israel. Ballistic missile hit residential neighborhood, killing 9 civilians.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Beit_Shemesh_overview.jpg/400px-Beit_Shemesh_overview.jpg" },
+  { id:15, lat:32.0786, lng:34.8207, title:"Ramat Gan — Cluster Warhead",            type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iranian cluster warhead killed two residents in their 70s. IRGC called it 'revenge for Larijani.'", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Ramat_Gan_skyline.jpg/400px-Ramat_Gan_skyline.jpg" },
+  { id:16, lat:32.7940, lng:34.9896, title:"Haifa — Iranian Retaliatory Strike",     type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Haifa in retaliation for South Pars attack. Arrow system intercepted majority of barrage.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Haifa_BayCrop.jpg/400px-Haifa_BayCrop.jpg" },
+  { id:17, lat:31.8928, lng:35.0266, title:"Ben Gurion Airport — Hit",               type:"iran",      date:"2026-03-15", confidence:"confirmed", desc:"Missile struck three private planes on tarmac. Israeli authorities capped outbound flights at 130 passengers.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Ben_Gurion_International_Airport_%282011%29.jpg/400px-Ben_Gurion_International_Airport_%282011%29.jpg" },
+  { id:18, lat:31.7683, lng:35.2137, title:"Jerusalem — Holy Site Debris",           type:"iran",      date:"2026-03-17", confidence:"confirmed", desc:"Missile fragments found near Al-Aqsa Mosque and Church of Holy Sepulchre. No casualties.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/AlAqsaMosque.jpg/400px-AlAqsaMosque.jpg" },
+  { id:19, lat:25.9000, lng:51.5500, title:"Ras Laffan, Qatar — LNG Terminal Hit",  type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Iran struck Qatar's LNG export hub. 13 of 14 ballistic missiles intercepted.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Ras_Laffan_city.JPG/400px-Ras_Laffan_city.JPG" },
+  { id:20, lat:25.1222, lng:56.3367, title:"Fujairah, UAE — Oil Zone Attack",        type:"iran",      date:"2026-03-18", confidence:"confirmed", desc:"Drone attack ignited fire in UAE oil industry zone. Debris killed one Pakistani national in Abu Dhabi.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Port_of_Fujairah_a.jpg/400px-Port_of_Fujairah_a.jpg" },
+  { id:21, lat:33.1000, lng:35.6333, title:"Nahariya — Hezbollah Attack",            type:"hezbollah", date:"2026-03-17", confidence:"confirmed", desc:"Hezbollah launched attack on northern Israel. One man wounded. 1M+ Lebanese displaced.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Nahariya_%28cropped%29.jpg/400px-Nahariya_%28cropped%29.jpg" },
+  { id:22, lat:24.6877, lng:46.7219, title:"Riyadh — Saudi Intercepts",              type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Saudi Arabia intercepting Iranian missiles in own airspace. KSA says 'trust gone.'", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Riyadh_Skyline_showing_Faisaliah_and_Kingdom_Tower.jpg/400px-Riyadh_Skyline_showing_Faisaliah_and_Kingdom_Tower.jpg" },
+  { id:23, lat:26.5500, lng:56.3000, title:"Strait of Hormuz — IRGC Drone Swarm Repelled", type:"us_il", date:"2026-03-21", confidence:"confirmed", desc:"USS Gerald R. Ford CSG CIWS engaged a swarm of ~40 IRGC kamikaze drones in the Strait of Hormuz. All destroyed. No US casualties. Iran's 4th attempt to strike the carrier group.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/USS_Gerald_R._Ford_%28CVN-78%29.jpg/400px-USS_Gerald_R._Ford_%28CVN-78%29.jpg" },
+  { id:24, lat:35.3000, lng:47.0000, title:"Kermanshah — Final SAM Sites Destroyed", type:"us_il",     date:"2026-03-21", confidence:"confirmed", desc:"CENTCOM confirms last known operational Iranian surface-to-air missile batteries near Kermanshah destroyed. Iran's air defense now assessed as critically degraded across all regions.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/S-300_Almaz_%28cropped%29.jpg/400px-S-300_Almaz_%28cropped%29.jpg" },
+  { id:25, lat:35.6892, lng:51.3890, title:"Tehran — Nowruz Protests Dispersed",    type:"iran",      date:"2026-03-21", confidence:"reported",  desc:"Iranians took to Tehran streets on Nowruz (Persian New Year) demanding ceasefire. IRGC and Basij dispersed crowds using tear gas and water cannons. At least 12 arrested. Video circulating on X.", verified:false, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Tehran_from_Milad_Tower.jpg/400px-Tehran_from_Milad_Tower.jpg" },
+  { id:26, lat:23.6140, lng:58.5922, title:"Muscat, Oman — Indirect Ceasefire Talks Begin", type:"us_il", date:"2026-03-22", confidence:"confirmed", desc:"Oman Foreign Minister Badr Al-Busaidi hosting separate meetings with US Special Envoy and Iranian Deputy FM. First indirect contact since war began. No ceasefire imminent but both sides acknowledge talks.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Mutrah_Harbour%2C_Muscat%2C_Oman.jpg/400px-Mutrah_Harbour%2C_Muscat%2C_Oman.jpg" },
+  { id:27, lat:29.3759, lng:47.9774, title:"Kuwait — US Embassy Attack Thwarted",   type:"iran",      date:"2026-03-22", confidence:"confirmed", desc:"Kuwaiti intelligence foiled an IRGC-linked plot to attack the US Embassy in Kuwait City. Three suspects arrested. Iran denies involvement. US issues Level 4 travel alert for the Gulf region.", verified:true, photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Kuwait_Towers.jpg/400px-Kuwait_Towers.jpg" },
   { id:28, lat:36.2021, lng:37.1343, title:"Aleppo, Syria — IRGC Proxy Strike on US Base", type:"iran", date:"2026-03-22", confidence:"reported", desc:"Rockets fired at Qamishli US outpost in NE Syria, attributed to IRGC-backed militia. No US casualties. F-15s conducted retaliatory strike on militia positions within 2 hours. CENTCOM confirms.", verified:true },
 ];
 
@@ -783,7 +783,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
         {channel:"@CENTCOMNews",time:t(68),text:"CENTCOM: US forces repelled a 40-drone IRGC swarm attack on USS Gerald R. Ford in the Strait of Hormuz overnight. All threats neutralized by CIWS and SM-6. Zero US casualties. Iran has now made 4 unsuccessful attempts against the CSG.",views:156700,type:"text",verified:true},
         {channel:"@IRNA_NEWS",time:t(55),text:"The Supreme Leader has authorized indirect talks in Muscat from a position of strength, not weakness. Iran's conditions are clear: full cessation of strikes, lifting of new sanctions, and written guarantees. We will not accept humiliation.",views:89200,type:"text",verified:false},
         {channel:"@IntelDoge",time:t(42),text:"BREAKING: Kuwaiti interior ministry confirms arrest of 3 IRGC-linked suspects in plot to attack US Embassy in Kuwait City. IEDs and surveillance equipment seized. Kuwait summons Iranian ambassador.",views:634000,type:"text",verified:true},
-        {channel:"@OSINTdefender",time:t(35),text:"Sentinel-2 imagery from this morning: Kharg Island fires STILL burning — Day 22. Significant damage to tank farm. Only 2 of 9 loading berths appear operational. Iran's oil export capacity at ~12% of pre-war levels. Thread with imagery 👇",views:287000,type:"photo",verified:true,img:"https://wvs.earthdata.nasa.gov/api/v1/snapshot?REQUEST=GetSnapshot&BBOX=49.85,29.05,50.80,29.55&CRS=EPSG:4326&LAYERS=MODIS_Terra_CorrectedReflectance_TrueColor,Reference_Features_15m&FORMAT=image/jpeg&WIDTH=420&HEIGHT=200&TIME=2024-03-01",coord:"29.26°N 50.32°E · KHARG ISLAND"},
+        {channel:"@OSINTdefender",time:t(35),text:"Sentinel-2 imagery from this morning: Kharg Island fires STILL burning — Day 22. Significant damage to tank farm. Only 2 of 9 loading berths appear operational. Iran's oil export capacity at ~12% of pre-war levels. Thread with imagery 👇",views:287000,type:"photo",verified:true,img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/KhargIsland.jpg/400px-KhargIsland.jpg",coord:"29.26°N 50.32°E · KHARG ISLAND"},
         {channel:"@HouthiMilSpo",time:t(28),text:"The Yemeni armed forces salute the brave Iranian people who took to the streets on Nowruz demanding dignity. We have fired 3 ballistic missiles at Ben Gurion airport in solidarity with the resistance. The Zionist entity has no safe skies.",views:43200,type:"text",verified:false},
         {channel:"@IntelDoge",time:t(19),text:"Aleppo source: rockets hit US outpost at Qamishli ~2hrs ago. IRGC-linked militia claimed. CENTCOM yet to confirm but F-15s seen departing Incirlik at speed. Day 23 expanding beyond Iran proper.",views:521000,type:"text",verified:false},
         {channel:"@IDFSpokesperson",time:t(12),text:"The IDF has struck 130+ military targets since Feb 28. Iran's ballistic missile fire has dropped 94%. We are close to achieving our stated objectives. The talks in Muscat do not change IDF operational plans — we continue until the mission is complete.",views:318000,type:"text",verified:true},
@@ -873,12 +873,6 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
   const fmtDate = (tz) => new Intl.DateTimeFormat('en-US',{month:'short',day:'2-digit',timeZone:tz}).format(time).toUpperCase();
 
   // DetailModal renderer
-  const nasaImg = (lat, lng, zoom=0.45) =>
-    `https://wvs.earthdata.nasa.gov/api/v1/snapshot?REQUEST=GetSnapshot` +
-    `&BBOX=${(lng-zoom).toFixed(3)},${(lat-zoom*0.7).toFixed(3)},${(lng+zoom).toFixed(3)},${(lat+zoom*0.7).toFixed(3)}` +
-    `&CRS=EPSG:4326&LAYERS=MODIS_Terra_CorrectedReflectance_TrueColor,Reference_Features_15m` +
-    `&FORMAT=image/jpeg&WIDTH=420&HEIGHT=200&TIME=2024-03-01`;
-  const SAT_GULF = nasaImg(28.5,53.0,4.5); // Wide Persian Gulf fallback for OSINT
   const SatBlock = ({src,label,coord}) => (
     <div style={{position:"relative",height:200,background:"#050a0f",overflow:"hidden",flexShrink:0}}>
       <img src={src} alt="satellite" style={{width:"100%",height:"100%",objectFit:"cover"}}
@@ -992,10 +986,10 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             <div style={{fontFamily:"'Orbitron',monospace",fontSize:12,fontWeight:700,color:"#f8fafc",lineHeight:1.4}}>{data.title}</div>
             <div style={{fontSize:10,color:"#8b9eb5",marginTop:4,fontFamily:"'Share Tech Mono',monospace"}}>{data.date}</div>
           </div>
-          {data.lat && data.lng && <SatBlock
-            src={nasaImg(data.lat, data.lng)}
-            label={hasSatRef ? "SATELLITE IMAGERY · NASA MODIS" : "TARGET AREA · NASA MODIS"}
-            coord={`${data.lat.toFixed(2)}°N ${data.lng.toFixed(2)}°E`}/>}
+          {data.photo && <SatBlock
+            src={data.photo}
+            label="LOCATION IMAGERY · WIKIMEDIA COMMONS"
+            coord={data.lat&&data.lng?`${data.lat.toFixed(2)}°N ${data.lng.toFixed(2)}°E`:null}/>}
           <div style={{padding:"12px 14px"}}>
             <div style={{fontSize:12,color:"#c8dae8",lineHeight:1.7,marginBottom:10}}>{data.desc}</div>
             {data.verified && <div style={{display:"flex",alignItems:"center",gap:6,background:"#081a10",border:"1px solid #1e4a2a",padding:"6px 10px",marginBottom:10}}>
@@ -1033,7 +1027,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
               {!isPhoto && !isVideo && data.type!=='text' && <span style={{background:"#1a1200",border:"1px solid #f59e0b44",color:"#f59e0b",padding:"2px 6px",fontSize:9,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>📎 {data.type?.toUpperCase()}</span>}
             </div>
           </div>
-          {isPhoto && <SatBlock src={data.img||SAT_GULF} label="OPEN-SOURCE IMAGERY" coord={data.coord||null}/>}
+          {isPhoto && data.img && <SatBlock src={data.img} label="OPEN-SOURCE IMAGERY" coord={data.coord||null}/>}
           {isVideo && (
             <div style={{height:150,background:"#050a0f",display:"flex",flexDirection:"column",
                          alignItems:"center",justifyContent:"center",gap:10,
@@ -1109,46 +1103,46 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
 
       <DetailModal/>
 
-      {/* ═══ WORLD CLOCK BAR ═══ */}
-      <div style={{background:"#050a0f",borderBottom:"1px solid #0f1f2e",padding:"4px 16px",display:"flex",alignItems:"center",justifyContent:"space-evenly",flexShrink:0,gap:8}}>
-        {[
-          {city:"WASHINGTON DC", flag:"🇺🇸", tz:"America/New_York"},
-          {city:"LONDON", flag:"🇬🇧", tz:"Europe/London"},
-          {city:"TEHRAN", flag:"🇮🇷", tz:"Asia/Tehran"},
-        ].map(({city,flag,tz})=>(
-          <div key={tz} style={{display:"flex",alignItems:"center",gap:7}}>
-            <span style={{fontSize:14}}>{flag}</span>
-            <div>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:13,color:"#f8fafc",letterSpacing:1.5,lineHeight:1}}>{fmtCity(tz)}</div>
-              <div style={{fontSize:8,color:"#4a6a80",letterSpacing:1.5,textTransform:"uppercase",marginTop:1}}>{city} · {fmtDate(tz)}</div>
-            </div>
-          </div>
-        ))}
-        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:5}}>
-          <div className="pulse" style={{width:5,height:5,borderRadius:"50%",background:"#22c55e"}}/>
-          <span style={{fontSize:9,color:"#22c55e",fontFamily:"'Share Tech Mono',monospace",letterSpacing:2}}>UTC {time.toUTCString().split(" ")[4]}</span>
-        </div>
-      </div>
-
       {/* ═══ HEADER ═══ */}
-      <div style={{background:"#070b12",borderBottom:"1px solid #0c1824",padding:"7px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+      <div style={{background:"#070b12",borderBottom:"1px solid #0c1824",padding:"6px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
           <span style={{fontFamily:"'Orbitron',monospace",fontSize:17,fontWeight:900,color:"#ef4444",letterSpacing:4}}>⚔ WARWATCH</span>
           <span style={{background:"#200808",border:"1px solid #ef444488",color:"#ef4444",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:2}}>
             <span className="blink">●</span> LIVE
           </span>
-          <span style={{background:"#120d00",border:"1px solid #f59e0b55",color:"#f59e0b",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5}}>
+          <span style={{background:"#120d00",border:"1px solid #f59e0b55",color:"#f59e0b",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5,whiteSpace:"nowrap"}}>
             IRAN WAR 2026 · DAY {tDay+1} · OP EPIC FURY
           </span>
           {newAlert && (
-            <span style={{background:"#0a2016",border:"1px solid #22c55e88",color:"#22c55e",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5,animation:"alertPulse 1s ease-in-out infinite"}}>
+            <span style={{background:"#0a2016",border:"1px solid #22c55e88",color:"#22c55e",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5,animation:"alertPulse 1s ease-in-out infinite",whiteSpace:"nowrap"}}>
               ● NEW EVENTS LOADED
             </span>
           )}
         </div>
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+          {/* City clock pills */}
+          {[
+            {label:"DC",  flag:"🇺🇸", tz:"America/New_York"},
+            {label:"LON", flag:"🇬🇧", tz:"Europe/London"},
+            {label:"TEH", flag:"🇮🇷", tz:"Asia/Tehran"},
+          ].map(({label,flag,tz})=>(
+            <div key={tz} style={{display:"flex",alignItems:"center",gap:5,background:"#080e14",border:"1px solid #1e2d3d",borderRadius:2,padding:"3px 8px"}}>
+              <span style={{fontSize:12,lineHeight:1}}>{flag}</span>
+              <div>
+                <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:12,color:"#f8fafc",lineHeight:1,letterSpacing:1}}>{fmtCity(tz)}</div>
+                <div style={{fontSize:7,color:"#4a6a80",letterSpacing:1,textTransform:"uppercase",marginTop:1}}>{label} · {fmtDate(tz)}</div>
+              </div>
+            </div>
+          ))}
+          {/* UTC pill */}
+          <div style={{display:"flex",alignItems:"center",gap:5,background:"#08120a",border:"1px solid #1a3a22",borderRadius:2,padding:"3px 8px"}}>
+            <div className="pulse" style={{width:5,height:5,borderRadius:"50%",background:"#22c55e",flexShrink:0}}/>
+            <div>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:12,color:"#22c55e",lineHeight:1,letterSpacing:1}}>{utcTime}</div>
+              <div style={{fontSize:7,color:"#22c55e99",letterSpacing:1,textTransform:"uppercase",marginTop:1}}>UTC · ZULU</div>
+            </div>
+          </div>
           <button className="simbtn" onClick={()=>setSimMode(true)}><span style={{fontSize:15}}>▶</span> WATCH WAR SIMULATION</button>
-          <span style={{color:"#22c55e",fontWeight:700,fontFamily:"'Share Tech Mono',monospace",fontSize:12}}>{utcTime} UTC</span>
         </div>
       </div>
 
