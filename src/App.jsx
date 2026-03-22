@@ -565,6 +565,7 @@ export default function WarWatch() {
   const [mapReady,   setMapReady]   = useState(false);
   const [acList,     setAcList]     = useState([]);
   const [acFetchKey, setAcFetchKey] = useState(0);
+  const [acLoaded,   setAcLoaded]   = useState(false);
   const [simMode,    setSimMode]    = useState(false);
   const [newAlert,   setNewAlert]   = useState(false);
   const [satellite,  setSatellite]  = useState(false);
@@ -672,12 +673,13 @@ export default function WarWatch() {
       fetch('/api/aircraft')
         .then(r=>r.json())
         .then(d=>{
-          if(!Array.isArray(d.aircraft)||d.aircraft.length===0) return;
+          setAcLoaded(true);
+          if(!Array.isArray(d.aircraft)) return;
           acData.current=d.aircraft;
           setAcList([...d.aircraft]);
           setAcFetchKey(k=>k+1);
         })
-        .catch(()=>{});
+        .catch(()=>{ setAcLoaded(true); });
     };
     load();
     const t=setInterval(load,300_000);
@@ -1539,8 +1541,11 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                   <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>TRACKING {acList.length} AIRCRAFT</span>
                   <div className="scan" style={{width:7,height:7,borderRadius:"50%",background:"#22c55e"}}/>
                 </div>
-                {acList.length===0 && (
+                {acList.length===0 && !acLoaded && (
                   <div style={{padding:"20px 11px",textAlign:"center",color:"#3a5060",fontSize:11,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>LOADING ADS-B FEED...</div>
+                )}
+                {acList.length===0 && acLoaded && (
+                  <div style={{padding:"20px 11px",textAlign:"center",color:"#3a5060",fontSize:11,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>NO AIRCRAFT IN RANGE</div>
                 )}
                 {acList.map(ac=>{
                   const col=acColor(ac);
