@@ -1,5 +1,27 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
+// ─── Aircraft & vessel image maps (Wikipedia Commons, public domain) ──────────
+const AIRCRAFT_IMG = {
+  'C-17A':        'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/C-17A_of_the_437th_AW.jpg/400px-C-17A_of_the_437th_AW.jpg',
+  'KC-135R':      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/KC-135R.jpg/400px-KC-135R.jpg',
+  'E-3 Sentry':   'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/E-3_Sentry_2.jpg/400px-E-3_Sentry_2.jpg',
+  'P-8A Poseidon':'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/US_Navy_P-8A_Poseidon.jpg/400px-US_Navy_P-8A_Poseidon.jpg',
+  'F-35I Adir':   'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/F-35A_flight_%28cropped%29.jpg/400px-F-35A_flight_%28cropped%29.jpg',
+  'KC-46A':       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/KC-46A_Pegasus_%28cropped%29.jpg/400px-KC-46A_Pegasus_%28cropped%29.jpg',
+  'FA-18F':       'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/F-A-18F_Super_Hornet_VFA-11.jpg/400px-F-A-18F_Super_Hornet_VFA-11.jpg',
+  'MQ-9 Reaper':  'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/MQ-9_Reaper_UAV.jpg/400px-MQ-9_Reaper_UAV.jpg',
+  'B-52H':        'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/B-52_Stratofortress.jpg/400px-B-52_Stratofortress.jpg',
+  'RQ-4 Global':  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/RQ-4_Global_Hawk.jpg/400px-RQ-4_Global_Hawk.jpg',
+};
+const VESSEL_IMG = {
+  'Carrier CSG': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/USS_Gerald_R._Ford_%28CVN-78%29.jpg/400px-USS_Gerald_R._Ford_%28CVN-78%29.jpg',
+  'DDG':         'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/USS_Arleigh_Burke_%28DDG-51%29.jpg/400px-USS_Arleigh_Burke_%28DDG-51%29.jpg',
+  'VLCC':        'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Crude_oil_tanker_AbQaiq.jpg/400px-Crude_oil_tanker_AbQaiq.jpg',
+  'LNG Carrier': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/LNG_Tanker.jpg/400px-LNG_Tanker.jpg',
+  'Container':   'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Container_ship_Essen_Express.jpg/400px-Container_ship_Essen_Express.jpg',
+  'Cargo':       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Cargo_ship.jpg/400px-Cargo_ship.jpg',
+};
+
 // ─── Base events (always shown; /api/events overlays live data on top) ────────
 const BASE_EVENTS = [
   { id:1,  lat:35.6892, lng:51.3890, title:"Tehran — IRGC HQ & Palace Complex",      type:"us_il",     date:"2026-03-20", confidence:"confirmed", desc:"Large explosions near Saadabad Palace complex. Series of strikes on military C2 infrastructure. IRGC confirms multiple sites hit.", verified:true },
@@ -527,6 +549,7 @@ export default function WarWatch() {
   const [satellite,  setSatellite]  = useState(false);
   const [events,     setEvents]     = useState(BASE_EVENTS);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [modalData,  setModalData]  = useState(null);
   const mainTileRef = useRef(null);
 
   // Fetch live OSINT events from /api/events (overlays on top of base events)
@@ -630,11 +653,7 @@ export default function WarWatch() {
       const col=ROLE_COLOR[ac.role]||"#94a3b8";
       const icon=L.divIcon({className:"",html:`<div style="transform:rotate(${ac.hdg}deg);color:${col};font-size:13px;filter:drop-shadow(0 0 4px ${col})">✈</div>`,iconSize:[14,14],iconAnchor:[7,7]});
       const m=L.marker([ac.lat,ac.lng],{icon,zIndexOffset:1000});
-      m.bindPopup(`<div style="font-family:'Share Tech Mono',monospace;font-size:11px;background:#070b10;color:#e2e8f0;padding:6px">
-        <div style="color:${col};font-weight:700">${ac.nation==="US"?"🇺🇸":"🇮🇱"} ${ac.type} — ${ac.role}</div>
-        <div style="color:#f8fafc;font-weight:700;margin-top:2px">${ac.callsign}</div>
-        <div style="color:#6b7280;margin-top:3px">FL${Math.floor(ac.alt/100)} · ${ac.hdg}° · ${ac.spd}kt</div>
-      </div>`,{className:"ww-popup"});
+      m.on('click',()=>setModalData({type:'aircraft',data:{...ac}}));
       m.addTo(map);aircraftMk.current[ac.id]=m;
     });
   },[mapReady,layers.aircraft]);
@@ -657,11 +676,7 @@ export default function WarWatch() {
       const col=STATUS_COLOR[v.status];
       const icon=L.divIcon({className:"",html:`<div style="color:${col};font-size:14px;filter:drop-shadow(0 0 4px ${col})">${v.status==="active"?"⛵":"⛴"}</div>`,iconSize:[14,14],iconAnchor:[7,7]});
       const m=L.marker([v.lat,v.lng],{icon,zIndexOffset:500});
-      m.bindPopup(`<div style="font-family:'Share Tech Mono',monospace;font-size:11px;background:#070b10;color:#e2e8f0;padding:6px">
-        <div style="color:${col};font-weight:700">⛴ ${v.status.toUpperCase()} — ${v.type}</div>
-        <div style="color:#f8fafc;font-weight:700;margin-top:2px">${v.name} [${v.flag}]</div>
-        <div style="color:#94a3b8;margin-top:3px">${v.dest}</div>
-      </div>`,{className:"ww-popup"});
+      m.on('click',()=>setModalData({type:'ship',data:{...v}}));
       m.addTo(map);shipMk.current.push(m);
     });
   },[mapReady,layers.shipping]);
@@ -824,6 +839,131 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
 
   if(simMode) return <WarSimulation onClose={()=>setSimMode(false)}/>;
 
+  // World clock helper
+  const fmtCity = (tz) => new Intl.DateTimeFormat('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:tz}).format(time);
+  const fmtDate = (tz) => new Intl.DateTimeFormat('en-US',{month:'short',day:'2-digit',timeZone:tz}).format(time).toUpperCase();
+
+  // DetailModal renderer
+  const DetailModal = () => {
+    if(!modalData) return null;
+    const {type, data} = modalData;
+    const close = ()=>setModalData(null);
+    let content = null;
+    if(type==='aircraft') {
+      const imgSrc = AIRCRAFT_IMG[data.type] || AIRCRAFT_IMG[Object.keys(AIRCRAFT_IMG).find(k=>data.type.startsWith(k))] || null;
+      const missionNote = {Strike:"Conducting active strike operations in theater.",Tanker:"Aerial refueling support for strike packages.",AWACS:"Command and control / battle management coverage.",ISR:"Intelligence, surveillance, and reconnaissance ops.",Transport:"Strategic airlift and logistics support.",Maritime:"Maritime patrol and anti-submarine operations."}[data.role]||"";
+      const nationFlag = {US:"🇺🇸",IL:"🇮🇱"}[data.nation]||"";
+      content = (
+        <div>
+          <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:700,color:"#60a5fa",letterSpacing:2}}>{data.callsign}</div>
+              <div style={{fontSize:11,color:"#8b9eb5",letterSpacing:1,marginTop:2}}>{nationFlag} {data.type} · {data.role}</div>
+            </div>
+            <span style={{background:"#0d1929",border:"1px solid #3b82f6",color:"#3b82f6",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>{data.nation} AIR</span>
+          </div>
+          {imgSrc && <img src={imgSrc} alt={data.type} onError={e=>{e.target.style.display='none'}} style={{width:"100%",height:180,objectFit:"cover",display:"block",background:"#050a0f"}}/>}
+          <div style={{padding:"12px 14px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
+              {[["ALTITUDE",data.alt?.toLocaleString()+"ft"],["HEADING",data.hdg+"°"],["SPEED",data.spd+"kt"]].map(([l,v])=>(
+                <div key={l} style={{background:"#0a1520",border:"1px solid #1e2d3d",padding:"6px 8px",textAlign:"center"}}>
+                  <div style={{fontFamily:"'Orbitron',monospace",fontSize:12,fontWeight:700,color:"#f8fafc"}}>{v}</div>
+                  <div style={{fontSize:9,color:"#8b9eb5",letterSpacing:1,marginTop:2}}>{l}</div>
+                </div>
+              ))}
+            </div>
+            {missionNote && <div style={{background:"#08111a",border:"1px solid #1e3a2a",color:"#86efac",padding:"8px 10px",fontSize:11,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5,letterSpacing:.5}}>▸ {missionNote}</div>}
+          </div>
+        </div>
+      );
+    } else if(type==='ship') {
+      const imgSrc = VESSEL_IMG[data.type] || null;
+      const flagMap={US:"🇺🇸",SG:"🇸🇬",NO:"🇳🇴",GR:"🇬🇷",JP:"🇯🇵",KR:"🇰🇷",IR:"🇮🇷"};
+      const stColor=STATUS_COLOR[data.status]||"#94a3b8";
+      content = (
+        <div>
+          <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontFamily:"'Orbitron',monospace",fontSize:13,fontWeight:700,color:"#f8fafc",letterSpacing:1.5}}>{data.name}</div>
+              <div style={{fontSize:11,color:"#8b9eb5",letterSpacing:1,marginTop:2}}>{flagMap[data.flag]||"🏳"} {data.type}</div>
+            </div>
+            <span style={{background:"#070b10",border:`1px solid ${stColor}`,color:stColor,padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>{data.status?.toUpperCase()}</span>
+          </div>
+          {imgSrc && <img src={imgSrc} alt={data.type} onError={e=>{e.target.style.display='none'}} style={{width:"100%",height:180,objectFit:"cover",display:"block",background:"#050a0f"}}/>}
+          <div style={{padding:"12px 14px"}}>
+            <div style={{background:"#08111a",border:"1px solid #1e2d3d",padding:"10px",marginBottom:8}}>
+              <div style={{fontSize:10,color:"#8b9eb5",letterSpacing:1,marginBottom:4}}>CURRENT ROUTING</div>
+              <div style={{fontSize:13,color:"#e2e8f0",fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5}}>{data.dest}</div>
+            </div>
+            <div style={{background:"#08111a",border:"1px solid #1e3a4a",color:"#7dd3fc",padding:"8px 10px",fontSize:11,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.5,letterSpacing:.5}}>
+              ▸ Strait of Hormuz remains CLOSED to commercial traffic since Day 3 of the conflict. All non-Iranian commercial vessels rerouting via Cape of Good Hope (+12 days transit).
+            </div>
+          </div>
+        </div>
+      );
+    } else if(type==='event') {
+      const cfg=TYPE_CFG[data.type]||{color:"#94a3b8",label:"Event",icon:"●"};
+      const ccfg=CONF_CFG[data.confidence]||{color:"#94a3b8",label:data.confidence};
+      content = (
+        <div>
+          <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <span style={{fontSize:16}}>{cfg.icon}</span>
+              <span style={{fontSize:10,color:cfg.color,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1,background:`${cfg.color}22`,border:`1px solid ${cfg.color}44`,padding:"2px 7px"}}>{cfg.label}</span>
+              <span style={{fontSize:10,color:ccfg.color,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1,background:`${ccfg.color}22`,border:`1px solid ${ccfg.color}44`,padding:"2px 7px"}}>{ccfg.label}</span>
+            </div>
+            <div style={{fontFamily:"'Orbitron',monospace",fontSize:12,fontWeight:700,color:"#f8fafc",lineHeight:1.4}}>{data.title}</div>
+            <div style={{fontSize:10,color:"#8b9eb5",marginTop:4,fontFamily:"'Share Tech Mono',monospace"}}>{data.date}</div>
+          </div>
+          <div style={{padding:"12px 14px"}}>
+            <div style={{fontSize:12,color:"#c8dae8",lineHeight:1.7,marginBottom:10}}>{data.desc}</div>
+            {data.verified && <div style={{display:"flex",alignItems:"center",gap:6,background:"#081a10",border:"1px solid #1e4a2a",padding:"6px 10px"}}>
+              <span style={{color:"#22c55e",fontSize:14}}>✓</span>
+              <span style={{fontSize:10,color:"#86efac",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>OSINT VERIFIED — Multiple independent sources confirmed</span>
+            </div>}
+          </div>
+        </div>
+      );
+    } else if(type==='osint') {
+      const chColor=tgColor(data.channel);
+      const nation=tgNation(data.channel);
+      content = (
+        <div>
+          <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:18}}>{nation}</span>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:chColor,fontFamily:"'Share Tech Mono',monospace"}}>{data.channel}</div>
+                <div style={{fontSize:10,color:"#8b9eb5",marginTop:1}}>{data.date} · {data.time}</div>
+              </div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              {data.verified && <span style={{color:"#22c55e",fontSize:12,fontFamily:"'Share Tech Mono',monospace"}}>✓ VERIFIED</span>}
+              {data.type!=='text' && <span style={{background:"#1a1200",border:"1px solid #f59e0b44",color:"#f59e0b",padding:"2px 6px",fontSize:9,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>📎 {data.type?.toUpperCase()}</span>}
+            </div>
+          </div>
+          <div style={{padding:"12px 14px"}}>
+            <div style={{fontSize:13,color:"#e2e8f0",lineHeight:1.8,marginBottom:10,fontFamily:"'Share Tech Mono',monospace",background:"#080e14",padding:"10px",border:"1px solid #1e2d3d"}}>{data.text}</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:10,color:"#8b9eb5",fontFamily:"'Share Tech Mono',monospace"}}>👁 {(data.views||0).toLocaleString()} views</span>
+              <span style={{fontSize:9,color:"#4a6070",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>SOURCE: {data.channel}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div onClick={close} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.82)",zIndex:20000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#070b10",border:"1px solid #1e3a50",borderRadius:2,maxWidth:460,width:"100%",maxHeight:"88vh",overflowY:"auto",boxShadow:"0 8px 48px rgba(0,0,0,.9)"}}>
+          <div style={{display:"flex",justifyContent:"flex-end",padding:"6px 10px",borderBottom:"1px solid #0c1824",background:"#050a0d"}}>
+            <button onClick={close} style={{background:"transparent",border:"1px solid #2a3d50",color:"#8b9eb5",padding:"2px 10px",fontFamily:"'Share Tech Mono',monospace",fontSize:11,cursor:"pointer",letterSpacing:2}}>✕ CLOSE</button>
+          </div>
+          {content}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{fontFamily:"'Rajdhani',sans-serif",background:"#060a0d",color:"#e2e8f0",height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{`
@@ -861,6 +1001,29 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
         input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:#1a2a3a;outline:none;border-radius:2px;cursor:pointer}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#f59e0b;cursor:pointer;box-shadow:0 0 8px #f59e0b88}
       `}</style>
+
+      <DetailModal/>
+
+      {/* ═══ WORLD CLOCK BAR ═══ */}
+      <div style={{background:"#050a0f",borderBottom:"1px solid #0f1f2e",padding:"4px 16px",display:"flex",alignItems:"center",justifyContent:"space-evenly",flexShrink:0,gap:8}}>
+        {[
+          {city:"WASHINGTON DC", flag:"🇺🇸", tz:"America/New_York"},
+          {city:"LONDON", flag:"🇬🇧", tz:"Europe/London"},
+          {city:"TEHRAN", flag:"🇮🇷", tz:"Asia/Tehran"},
+        ].map(({city,flag,tz})=>(
+          <div key={tz} style={{display:"flex",alignItems:"center",gap:7}}>
+            <span style={{fontSize:14}}>{flag}</span>
+            <div>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:13,color:"#f8fafc",letterSpacing:1.5,lineHeight:1}}>{fmtCity(tz)}</div>
+              <div style={{fontSize:8,color:"#4a6a80",letterSpacing:1.5,textTransform:"uppercase",marginTop:1}}>{city} · {fmtDate(tz)}</div>
+            </div>
+          </div>
+        ))}
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:5}}>
+          <div className="pulse" style={{width:5,height:5,borderRadius:"50%",background:"#22c55e"}}/>
+          <span style={{fontSize:9,color:"#22c55e",fontFamily:"'Share Tech Mono',monospace",letterSpacing:2}}>UTC {time.toUTCString().split(" ")[4]}</span>
+        </div>
+      </div>
 
       {/* ═══ HEADER ═══ */}
       <div style={{background:"#070b12",borderBottom:"1px solid #0c1824",padding:"7px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
@@ -970,6 +1133,10 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                     <div style={{marginTop:7,fontSize:12,color:"#96b0c0",lineHeight:1.7,fontFamily:"'Share Tech Mono',monospace"}}>
                       {ev.desc}
                       {ev.verified&&<div style={{color:"#22c55e",marginTop:4,fontSize:10}}>✓ OSINT VERIFIED</div>}
+                      <button onClick={e=>{e.stopPropagation();setModalData({type:'event',data:ev});}}
+                        style={{marginTop:8,background:"#0a1929",border:"1px solid #3b82f6",color:"#60a5fa",padding:"4px 12px",fontFamily:"'Share Tech Mono',monospace",fontSize:10,cursor:"pointer",letterSpacing:1.5,textTransform:"uppercase",width:"100%"}}>
+                        📋 VIEW FULL INTEL
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1070,7 +1237,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                 {tgItems.map((item,i)=>{
                   const col=tgColor(item.channel);
                   return (
-                    <div key={i} style={{borderBottom:"1px solid #090f19",padding:"9px 0"}}>
+                    <div key={i} onClick={()=>setModalData({type:'osint',data:item})} style={{borderBottom:"1px solid #090f19",padding:"9px 0",cursor:"pointer",transition:"background .1s"}} onMouseEnter={e=>e.currentTarget.style.background="#0c1928"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,alignItems:"center"}}>
                         <div style={{display:"flex",gap:6,alignItems:"center"}}>
                           <span style={{fontSize:10,color:col,fontFamily:"'Share Tech Mono',monospace",fontWeight:700}}>{tgNation(item.channel)} {item.channel}</span>
@@ -1083,7 +1250,10 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                         </div>
                       </div>
                       <div style={{fontSize:12,color:"#b0c8d8",lineHeight:1.6,marginBottom:4}}>{item.text}</div>
-                      <div style={{fontSize:9,color:"#6080a0",fontFamily:"'Share Tech Mono',monospace"}}>👁 {typeof item.views==="number"?item.views.toLocaleString():item.views}</div>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div style={{fontSize:9,color:"#6080a0",fontFamily:"'Share Tech Mono',monospace"}}>👁 {typeof item.views==="number"?item.views.toLocaleString():item.views}</div>
+                        <div style={{fontSize:9,color:"#3b6080",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>TAP FOR DETAILS ›</div>
+                      </div>
                     </div>
                   );
                 })}
