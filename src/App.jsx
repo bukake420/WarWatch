@@ -902,11 +902,11 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
         onError={e=>{e.target.style.display='none'}}/>}
     </div>
   );
-  const TweetEmbed = React.forwardRef(({html}, ref) => (
-    <div ref={ref}
+  const TweetEmbed = ({html, divRef}) => (
+    <div ref={divRef}
       style={{background:"#050a0f",borderBottom:"1px solid #1e2d3d",padding:"8px 10px",overflowX:"hidden"}}
       dangerouslySetInnerHTML={{__html: html}}/>
-  ));
+  );
   const getWikiSlug = (type, data) => {
     if(type==='aircraft'){const u=AIRCRAFT_WIKI[data.type]||AIRCRAFT_WIKI[Object.keys(AIRCRAFT_WIKI).find(k=>data.type.startsWith(k))];return u?u.split('/wiki/')[1]:null;}
     if(type==='ship'){const u=VESSEL_WIKI[data.type];return u?u.split('/wiki/')[1]:null;}
@@ -967,7 +967,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             </div>
             <span style={{background:"#0d1929",border:"1px solid #3b82f6",color:"#3b82f6",padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>{data.nation} AIR</span>
           </div>
-          {oEmbedHtml ? <TweetEmbed html={oEmbedHtml} ref={tweetRef}/> : <ImgBox src={fetchedImg} placeholder="✈"/>}
+          {oEmbedHtml ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/> : <ImgBox src={fetchedImg} placeholder="✈"/>}
           <div style={{padding:"12px 14px"}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
               {[["ALTITUDE",data.alt?.toLocaleString()+"ft"],["HEADING",data.hdg+"°"],["SPEED",data.spd+"kt"]].map(([l,v])=>(
@@ -997,7 +997,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             </div>
             <span style={{background:"#070b10",border:`1px solid ${stColor}`,color:stColor,padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>{data.status?.toUpperCase()}</span>
           </div>
-          {oEmbedHtml ? <TweetEmbed html={oEmbedHtml} ref={tweetRef}/> : <ImgBox src={fetchedImg} placeholder="⛴"/>}
+          {oEmbedHtml ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/> : <ImgBox src={fetchedImg} placeholder="⛴"/>}
           <div style={{padding:"12px 14px"}}>
             <div style={{background:"#08111a",border:"1px solid #1e2d3d",padding:"10px",marginBottom:8}}>
               <div style={{fontSize:10,color:"#8b9eb5",letterSpacing:1,marginBottom:4}}>CURRENT ROUTING</div>
@@ -1032,7 +1032,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             <div style={{fontSize:10,color:"#8b9eb5",marginTop:4,fontFamily:"'Share Tech Mono',monospace"}}>{data.date}</div>
           </div>
           {oEmbedHtml
-            ? <TweetEmbed html={oEmbedHtml} ref={tweetRef}/>
+            ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/>
             : (fetchedImg||data.wikiPage) && <SatBlock
                 src={fetchedImg||''}
                 label="LOCATION IMAGERY · WIKIPEDIA"
@@ -1075,10 +1075,10 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             </div>
           </div>
           {isPhoto && (oEmbedHtml
-            ? <TweetEmbed html={oEmbedHtml} ref={tweetRef}/>
+            ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/>
             : data.img && <SatBlock src={data.img} label="OPEN-SOURCE IMAGERY" coord={data.coord||null}/>)}
           {isVideo && (oEmbedHtml
-            ? <TweetEmbed html={oEmbedHtml} ref={tweetRef}/>
+            ? <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/>
             : (
               <div style={{height:150,background:"#050a0f",display:"flex",flexDirection:"column",
                            alignItems:"center",justifyContent:"center",gap:10,
@@ -1090,7 +1090,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                 <span style={{color:"#4a6070",fontSize:8,fontFamily:"'Share Tech Mono',monospace"}}>SOURCE: {data.channel}</span>
               </div>
             ))}
-          {!isPhoto && !isVideo && oEmbedHtml && <TweetEmbed html={oEmbedHtml} ref={tweetRef}/>}
+          {!isPhoto && !isVideo && oEmbedHtml && <TweetEmbed html={oEmbedHtml} divRef={tweetRef}/>}
           <div style={{padding:"12px 14px"}}>
             <div style={{fontSize:13,color:"#e2e8f0",lineHeight:1.8,marginBottom:10,fontFamily:"'Share Tech Mono',monospace",background:"#080e14",padding:"10px",border:"1px solid #1e2d3d"}}>{data.text}</div>
             <div style={{fontSize:9,color:"#6080a0",fontFamily:"'Share Tech Mono',monospace",marginBottom:10}}>👁 {(data.views||0).toLocaleString()} views</div>
