@@ -4,10 +4,11 @@ let cache = null, cacheTs = 0;
 // Bounding box: Europe + Middle East + North Africa (wide net to ensure coverage)
 const BBOX = { lamin: 5, lomin: -10, lamax: 65, lomax: 95 };
 
-const FETCH_OPTS = {
-  signal: AbortSignal.timeout(12000),
-  headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
-};
+// Build fresh fetch options per request — AbortSignal must NOT be shared across calls
+// because a module-level signal fires once and permanently aborts all future fetches
+// in warm Lambda containers.
+const FETCH_HEADERS = { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' };
+const fetchOpts = () => ({ signal: AbortSignal.timeout(12000), headers: FETCH_HEADERS });
 
 // Normalize an adsb.lol / airplanes.live aircraft object
 function fromAdsbLol(ac) {
@@ -48,20 +49,9 @@ function fromOpenSky(s) {
   };
 }
 
-async function fetchAirplanesLive() {
-  // airplanes.live — community ADS-B, same API shape as adsb.lol
-  const url = 'https://api.airplanes.live/v2/lat/45/lon/20/dist/4000';
-  const resp = await fetch(url, FETCH_OPTS);
-  if (!resp.ok) throw new Error(`airplanes.live HTTP ${resp.status}`);
-  const data = await resp.json();
-  const list = data.ac || [];
-  if (!list.length) throw new Error('airplanes.live returned 0 aircraft');
-  return { aircraft: list.map(fromAdsbLol).filter(Boolean), source: 'airplanes.live' };
-}
-
 async function fetchAdsbLol() {
   const url = 'https://api.adsb.lol/v2/lat/45/lon/20/dist/4000';
-  const resp = await fetch(url, FETCH_OPTS);
+  const resp = await fetch(url, fetchOpts());
   if (!resp.ok) throw new Error(`adsb.lol HTTP ${resp.status}`);
   const data = await resp.json();
   const list = data.ac || [];
@@ -69,9 +59,35 @@ async function fetchAdsbLol() {
   return { aircraft: list.map(fromAdsbLol).filter(Boolean), source: 'adsb.lol' };
 }
 
+async function fetchAirplanesLive() {
+  // airplanes.live uses /v2/point/<lat>/<lon>/<radius_nm>, max 250 nm per query.
+  // Fetch from multiple points to cover the conflict zone + Europe.
+  const points = [
+    [32, 46],  // Iran/Iraq/Gulf core
+    [33, 36],  // Levant/Israel/Lebanon
+    [48, 18],  // Central Europe
+    [51,  8],  // Western Europe
+  ];
+  const seen = new Set();
+  const aircraft = [];
+  await Promise.all(points.map(async ([lat, lon]) => {
+    const resp = await fetch(`https://api.airplanes.live/v2/point/${lat}/${lon}/250`, fetchOpts());
+    if (!resp.ok) return;
+    const data = await resp.json();
+    for (const ac of (data.ac || [])) {
+      if (!ac.hex || seen.has(ac.hex)) continue;
+      seen.add(ac.hex);
+      const norm = fromAdsbLol(ac);
+      if (norm) aircraft.push(norm);
+    }
+  }));
+  if (!aircraft.length) throw new Error('airplanes.live returned 0 aircraft');
+  return { aircraft, source: 'airplanes.live' };
+}
+
 async function fetchOpenSky() {
   const url = `https://opensky-network.org/api/states/all?lamin=${BBOX.lamin}&lomin=${BBOX.lomin}&lamax=${BBOX.lamax}&lomax=${BBOX.lomax}`;
-  const resp = await fetch(url, FETCH_OPTS);
+  const resp = await fetch(url, fetchOpts());
   if (!resp.ok) throw new Error(`OpenSky HTTP ${resp.status}`);
   const data = await resp.json();
   const list = data.states || [];
@@ -91,7 +107,7 @@ exports.handler = async () => {
 
   const errors = [];
 
-  for (const fn of [fetchAirplanesLive, fetchAdsbLol, fetchOpenSky]) {
+  for (const fn of [fetchAdsbLol, fetchAirplanesLive, fetchOpenSky]) {
     try {
       const { aircraft, source } = await fn();
       const body = JSON.stringify({ aircraft, timestamp: Date.now(), count: aircraft.length, source });
