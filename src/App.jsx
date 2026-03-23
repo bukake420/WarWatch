@@ -189,6 +189,25 @@ const STATS_DATA = [
 ];
 
 const dayToDate = d => { const dt=new Date(WAR_START); dt.setDate(dt.getDate()+d); return dt.toLocaleDateString("en-US",{month:"short",day:"numeric"}); };
+
+// ─── localStorage cache helpers (8-hour TTL) ─────────────────────────────────
+const CACHE_TTL = 8 * 60 * 60 * 1000;
+function readCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null;
+    return data;
+  } catch { return null; }
+}
+function writeCache(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+function cacheAge(key) {
+  try { const raw = localStorage.getItem(key); if (!raw) return null; return JSON.parse(raw).ts; } catch { return null; }
+}
+
 const moveAC = ac => {
   if(!ac.spd||!ac.hdg) return ac;
   const r=ac.hdg*Math.PI/180;
@@ -572,7 +591,23 @@ export default function WarWatch() {
   const [events,     setEvents]     = useState(BASE_EVENTS);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [modalData,  setModalData]  = useState(null);
+  const [dynLeaders, setDynLeaders] = useState([]);
+  const [leadersLoad, setLeadersLoad] = useState(false);
+  const [feedUpdatedAt,    setFeedUpdatedAt]    = useState(null);
+  const [osintUpdatedAt,   setOsintUpdatedAt]   = useState(null);
+  const [leadersUpdatedAt, setLeadersUpdatedAt] = useState(null);
   const mainTileRef = useRef(null);
+
+  // On startup, hydrate from localStorage cache (no API call if < 8 hours old)
+  useEffect(()=>{
+    const feed    = readCache("ww_feed");
+    const osint   = readCache("ww_osint");
+    const leaders = readCache("ww_leaders");
+    if (feed)    { setFeedItems(feed);     setFeedUpdatedAt(cacheAge("ww_feed")); }
+    if (osint)   { setTgItems(osint);      setOsintUpdatedAt(cacheAge("ww_osint")); }
+    if (leaders) { setDynLeaders(leaders); setLeadersUpdatedAt(cacheAge("ww_leaders")); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
 
   // Fetch live OSINT events from /api/events (overlays on top of base events)
   useEffect(()=>{
@@ -588,28 +623,35 @@ export default function WarWatch() {
   useEffect(()=>{ const t=setInterval(()=>setTime(new Date()),1000); return()=>clearInterval(t); },[]);
 
   // Re-fetch AI panels when the user manually changes the day (not during auto-play)
+  // Only charges credits if cache is stale — prevents drain during timeline scrubbing
   const prevTDay = useRef(tDay);
   useEffect(()=>{
     if(prevTDay.current===tDay){prevTDay.current=tDay;return;}
     prevTDay.current=tDay;
     if(playing) return; // skip while timeline is auto-advancing
-    if(feedItems.length>0) loadFeed();
-    if(tgItems.length>0)   loadOsint();
+    if(feedItems.length>0 && !readCache("ww_feed"))  loadFeed();
+    if(tgItems.length>0   && !readCache("ww_osint")) loadOsint();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[tDay, playing]);
 
-  // Auto-refresh OSINT feed every 15 minutes when it has already been loaded.
-  // Use a ref for the callbacks so the interval always calls the latest version
-  // and avoids the stale-closure trap.
-  const loadFeedRef  = useRef(null);
-  const loadOsintRef = useRef(null);
-  useEffect(()=>{ loadFeedRef.current  = loadFeed;  });
-  useEffect(()=>{ loadOsintRef.current = loadOsint; });
+  // Auto-refresh 3× per day (every 8 hours) — cache-first so no-ops on warm reloads.
+  // Use refs so the interval always calls the latest function version.
+  const loadFeedRef    = useRef(null);
+  const loadOsintRef   = useRef(null);
+  const loadLeadersRef = useRef(null);
+  useEffect(()=>{ loadFeedRef.current    = loadFeed;    });
+  useEffect(()=>{ loadOsintRef.current   = loadOsint;   });
+  useEffect(()=>{ loadLeadersRef.current = loadLeaders; });
   useEffect(()=>{
     const iv=setInterval(()=>{
+      // Invalidate caches so next call fetches fresh content
+      localStorage.removeItem("ww_feed");
+      localStorage.removeItem("ww_osint");
+      localStorage.removeItem("ww_leaders");
       if(tgItems.length>0)   loadOsintRef.current?.();
       if(feedItems.length>0) loadFeedRef.current?.();
-    },15*60*1000);
+      loadLeadersRef.current?.();
+    },8*60*60*1000); // every 8 hours → ~3× per day
     return()=>clearInterval(iv);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
@@ -619,6 +661,12 @@ export default function WarWatch() {
     const t=setTimeout(()=>setTDay(d=>d+1),700);
     return()=>clearTimeout(t);
   },[playing,tDay]);
+
+  // Auto-load leaders when user first opens the tab (cache-first — no charge if warm)
+  useEffect(()=>{
+    if(tab==="leaders" && dynLeaders.length===0 && !leadersLoad) loadLeaders();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[tab]);
 
   // Events: filtered + sorted latest→oldest when on max day
   const filteredEvents = useMemo(()=>{
@@ -631,14 +679,17 @@ export default function WarWatch() {
       : [...ev].sort((a,b)=>new Date(a.date)-new Date(b.date));
   },[tDay,filter,confFilter]);
 
-  // Leadership posts filtered
+  // Leadership posts filtered (static + dynamically generated)
   const filteredLeaders = useMemo(()=>{
     setVisibleLeaders(5);
     const dayCutoff = new Date(WAR_START); dayCutoff.setDate(dayCutoff.getDate()+tDay);
-    let posts = LEADERSHIP_POSTS.filter(p=>new Date(p.date)<=dayCutoff);
+    const staticPosts = LEADERSHIP_POSTS.filter(p=>new Date(p.date)<=dayCutoff);
+    // Dynamic posts are always for today — show them regardless of timeline day
+    const allPosts = tDay>=MAX_DAY ? [...staticPosts,...dynLeaders] : staticPosts;
+    let posts = [...new Map(allPosts.map(p=>[p.id,p])).values()]; // dedup by id
     if(leaderFilter!=="all") posts=posts.filter(p=>p.country===leaderFilter);
     return [...posts].sort((a,b)=>new Date(b.date+"T"+b.time)-new Date(a.date+"T"+a.time));
-  },[tDay,leaderFilter]);
+  },[tDay,leaderFilter,dynLeaders]);
 
   const dayCasualties = useMemo(()=>({
     killed:Math.round(1700*(tDay/MAX_DAY)),
@@ -782,6 +833,34 @@ export default function WarWatch() {
     });
   },[mapReady,layers.shipping]);
 
+  const loadLeaders=async()=>{
+    const cached=readCache("ww_leaders");
+    if(cached){setDynLeaders(cached);setLeadersUpdatedAt(cacheAge("ww_leaders"));return;}
+    setLeadersLoad(true);
+    try{
+      const today=dayToDate(MAX_DAY);
+      const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+        model:"claude-haiku-4-5-20251001",max_tokens:800,
+        system:"You are a JSON generator. Respond with ONLY a raw JSON array. No markdown, no code fences.",
+        messages:[{role:"user",content:`Generate 5 new political/military leader posts for the 2026 Iran War, ${today} (Day ${MAX_DAY+1}).
+Reflect latest developments: Oman indirect peace talks, Hormuz closure, Day ${MAX_DAY+1} battlefield situation.
+Leaders: choose 5 from Trump, Netanyahu, Pezeshkian, Macron, Hegseth.
+Return JSON array, each object with these exact keys:
+id (integer 3001-3005), person (string), role (string), country (flag emoji like 🇺🇸), platform (string), handle (string starting with @), date ("${today.replace(/[A-Za-z]+ /,`2026-03-`).padStart(10,"0")}"), time ("HH:MM"), color (hex color string), verified (boolean), text (post content 1-3 sentences)`}]})});
+      if(!r.ok) return;
+      const d=await r.json();
+      const raw=d.content[0].text;
+      const s=raw.indexOf("["),e=raw.lastIndexOf("]");
+      if(s===-1||e===-1) return;
+      const posts=JSON.parse(raw.slice(s,e+1));
+      if(!Array.isArray(posts)||posts.length===0) return;
+      setDynLeaders(posts);
+      writeCache("ww_leaders",posts);
+      setLeadersUpdatedAt(Date.now());
+    }catch(e){console.error("loadLeaders:",e);}
+    setLeadersLoad(false);
+  };
+
   const genSitrep=async()=>{
     setSitLoad(true);setTab("sitrep");
     const ev=events.filter(e=>Math.floor((new Date(e.date)-WAR_START)/86400000)<=tDay).map(e=>`[${e.date}] ${e.title}: ${e.desc}`).join("\n");
@@ -794,10 +873,13 @@ export default function WarWatch() {
   };
 
   const loadFeed=async()=>{
+    // Serve from cache if fresh (avoids redundant API charges)
+    const cached=readCache("ww_feed");
+    if(cached){setFeedItems(cached);setFeedUpdatedAt(cacheAge("ww_feed"));setTab("news");return;}
     setFeedLoad(true);setTab("news");setFeedDayOffset(0);
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-6",max_tokens:1200,
+        model:"claude-haiku-4-5-20251001",max_tokens:1200,
         system:"You are a JSON generator. Respond with ONLY a raw JSON array. No markdown, no code fences, no commentary. Start with [ and end with ].",
         messages:[{role:"user",content:`Generate 12 OSINT news feed items for the 2026 Iran War, Day ${tDay+1} (${dayToDate(tDay)}).
 
@@ -811,17 +893,23 @@ time (HH:MM), source (news org or military), text (1-2 sentence update), type (o
       const raw=d.content[0].text;
       const start=raw.indexOf("["), end=raw.lastIndexOf("]");
       if(start===-1||end===-1) throw new Error("No array");
-      setFeedItems(JSON.parse(raw.slice(start,end+1)));
+      const items=JSON.parse(raw.slice(start,end+1));
+      setFeedItems(items);
+      writeCache("ww_feed",items);
+      setFeedUpdatedAt(Date.now());
       setNewAlert(true);setTimeout(()=>setNewAlert(false),4000);
     }catch(e){setFeedItems([{time:"ERR",source:"System",text:`Feed unavailable: ${e.message}`,type:"analysis",side:"intl"}]);}
     setFeedLoad(false);
   };
 
   const loadOsint=async()=>{
+    // Serve from cache if fresh
+    const cached=readCache("ww_osint");
+    if(cached){setTgItems(cached);setOsintUpdatedAt(cacheAge("ww_osint"));setTab("osint");return;}
     setTgLoad(true);setTab("osint");setTgDayOffset(0);
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-6",max_tokens:1200,
+        model:"claude-haiku-4-5-20251001",max_tokens:1200,
         system:"You are a JSON generator. You must respond with ONLY a raw JSON array. No explanation, no markdown, no code fences, no commentary before or after. Start your response with [ and end with ].",
         messages:[{role:"user",content:`Generate exactly 12 realistic Telegram channel posts for the 2026 Iran-Israel war, Day ${tDay+1}.
 
@@ -844,6 +932,8 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
       if(start===-1||end===-1) throw new Error("No JSON array found");
       const parsed=JSON.parse(raw.slice(start,end+1));
       setTgItems(parsed);
+      writeCache("ww_osint",parsed);
+      setOsintUpdatedAt(Date.now());
     }catch(e){
       console.error("Telegram parse error:",e);
       // Generate timestamps relative to now so fallback posts look current
@@ -877,7 +967,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
     const daysLabel = periodStart===periodEnd ? `Day ${periodStart+1} (${dateFrom})` : `Days ${periodStart+1}–${periodEnd+1} (${dateFrom} – ${dateTo})`;
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-6",max_tokens:1200,
+        model:"claude-haiku-4-5-20251001",max_tokens:1200,
         system:"You are a JSON generator. Respond with ONLY a raw JSON array. No explanation, no markdown, no code fences. Start with [ and end with ].",
         messages:[{role:"user",content:`Generate 10 OSINT news feed items covering the 2026 Iran War: ${daysLabel}. These are EARLIER events — reflect what was happening at that point in the war. Use timestamps and context appropriate to that window. Sources: CENTCOM, IDF, Reuters, Al Jazeera, ISW, IRGC wire, WHO. Return JSON:\n[{"time":"HH:MM","date":"YYYY-MM-DD","source":"...","text":"...","type":"strike|intercept|diplomatic|humanitarian|energy|analysis","side":"us_il|iran|intl"}]`}]})});
       if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
@@ -901,7 +991,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
     const daysLabel = periodStart===periodEnd ? `Day ${periodStart+1} (${dateFrom})` : `Days ${periodStart+1}–${periodEnd+1} (${dateFrom} – ${dateTo})`;
     try{
       const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-6",max_tokens:1200,
+        model:"claude-haiku-4-5-20251001",max_tokens:1200,
         system:"You are a JSON generator. Respond with ONLY a raw JSON array. No explanation, no markdown, no code fences. Start with [ and end with ].",
         messages:[{role:"user",content:`Generate 10 Telegram/OSINT channel posts covering the 2026 Iran War: ${daysLabel}. These are EARLIER posts — reflect what was happening and being discussed at that point. Channels: @IDFSpokesperson (IDF updates), @IRNA_NEWS (Iranian state), @CENTCOMNews (US military), @OSINTdefender (OSINT analyst), @IntelDoge (aggregator), @HouthiMilSpo (Houthi). Use dates matching that period. JSON:\n[{"channel":"@handle","time":"HH:MM","date":"YYYY-MM-DD","text":"...","views":1234,"type":"text|video|photo","verified":true}]`}]})});
       if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
@@ -1372,7 +1462,8 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             {/* ── LEADERSHIP POSTS ── */}
             {tab==="leaders" && (
               <div>
-                {filteredLeaders.length===0 && (
+                {leadersLoad&&<Spinner color="#a78bfa" label="GENERATING LEADER POSTS"/>}
+                {filteredLeaders.length===0 && !leadersLoad && (
                   <div style={{textAlign:"center",padding:"24px",color:"#7090a8",fontSize:12,fontFamily:"'Share Tech Mono',monospace"}}>
                     No posts available for Day {tDay+1}
                   </div>
@@ -1407,6 +1498,13 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                     </button>
                   </div>
                 )}
+                {leadersUpdatedAt&&(
+                  <div style={{textAlign:"center",padding:"6px 0 10px",fontSize:9,color:"#374151",fontFamily:"'Share Tech Mono',monospace"}}>
+                    LIVE POSTS · CACHED {new Date(leadersUpdatedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
+                    <button className="abtn" onClick={()=>{localStorage.removeItem("ww_leaders");setDynLeaders([]);loadLeaders();}}
+                      style={{display:"block",margin:"4px auto 0",borderColor:"#1a2a3a",color:"#374151",fontSize:8}}>↻ RELOAD POSTS</button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1433,7 +1531,8 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                 ))}
                 {feedItems.length>0&&(
                   <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:12}}>
-                    <button className="abtn" onClick={loadFeed} style={{width:"100%",borderColor:"#2a3d50",color:"#7090a8"}}>↻ REFRESH</button>
+                    {feedUpdatedAt&&<div style={{textAlign:"center",fontSize:9,color:"#374151",fontFamily:"'Share Tech Mono',monospace"}}>CACHED · {new Date(feedUpdatedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div>}
+                    <button className="abtn" onClick={()=>{localStorage.removeItem("ww_feed");loadFeed();}} style={{width:"100%",borderColor:"#2a3d50",color:"#7090a8"}}>↻ REFRESH</button>
                     {tDay - feedDayOffset > 0 && (
                       <button className="abtn" onClick={loadMoreFeed} disabled={feedMoreLoad}
                         style={{width:"100%",borderColor:"#2a3d50",color:feedMoreLoad?"#374151":"#8aa8bc"}}>
@@ -1485,7 +1584,8 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                 })}
                 {tgItems.length>0&&(
                   <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:12}}>
-                    <button className="abtn" onClick={loadOsint} style={{width:"100%",borderColor:"#2a3d50",color:"#7090a8"}}>↻ REFRESH CHANNELS</button>
+                    {osintUpdatedAt&&<div style={{textAlign:"center",fontSize:9,color:"#374151",fontFamily:"'Share Tech Mono',monospace"}}>CACHED · {new Date(osintUpdatedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div>}
+                    <button className="abtn" onClick={()=>{localStorage.removeItem("ww_osint");loadOsint();}} style={{width:"100%",borderColor:"#2a3d50",color:"#7090a8"}}>↻ REFRESH CHANNELS</button>
                     {tDay - tgDayOffset > 0 && (
                       <button className="abtn" onClick={loadMoreOsint} disabled={tgMoreLoad}
                         style={{width:"100%",borderColor:"#2a3d50",color:tgMoreLoad?"#374151":"#8aa8bc"}}>
