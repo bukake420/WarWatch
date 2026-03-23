@@ -587,11 +587,32 @@ export default function WarWatch() {
 
   useEffect(()=>{ const t=setInterval(()=>setTime(new Date()),1000); return()=>clearInterval(t); },[]);
 
-  // Auto-refresh OSINT feed every 15 minutes when it has already been loaded
+  // Re-fetch AI panels when the user manually changes the day (not during auto-play)
+  const prevTDay = useRef(tDay);
   useEffect(()=>{
-    const iv=setInterval(()=>{ if(tgItems.length>0) loadOsint(); },15*60*1000);
+    if(prevTDay.current===tDay){prevTDay.current=tDay;return;}
+    prevTDay.current=tDay;
+    if(playing) return; // skip while timeline is auto-advancing
+    if(feedItems.length>0) loadFeed();
+    if(tgItems.length>0)   loadOsint();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[tDay, playing]);
+
+  // Auto-refresh OSINT feed every 15 minutes when it has already been loaded.
+  // Use a ref for the callbacks so the interval always calls the latest version
+  // and avoids the stale-closure trap.
+  const loadFeedRef  = useRef(null);
+  const loadOsintRef = useRef(null);
+  useEffect(()=>{ loadFeedRef.current  = loadFeed;  });
+  useEffect(()=>{ loadOsintRef.current = loadOsint; });
+  useEffect(()=>{
+    const iv=setInterval(()=>{
+      if(tgItems.length>0)   loadOsintRef.current?.();
+      if(feedItems.length>0) loadFeedRef.current?.();
+    },15*60*1000);
     return()=>clearInterval(iv);
-  },[tgItems.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
   useEffect(()=>{
     if(!playing) return;
     if(tDay>=MAX_DAY){setPlaying(false);return;}
