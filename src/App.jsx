@@ -666,23 +666,49 @@ export default function WarWatch() {
     });
   },[mapReady,filteredEvents,layers.strikes]);
 
-  // Fetch live aircraft from OpenSky Network proxy (refreshes every 5 min)
+  // Fetch live aircraft directly from browser (avoids Netlify function timeouts/IP blocks)
   useEffect(()=>{
     if(!mapReady) return;
-    const load=()=>{
-      fetch('/api/aircraft')
-        .then(r=>r.json())
-        .then(d=>{
+    const BBOX = { lamin:5, lomin:-10, lamax:65, lomax:95 };
+    const normalize = ac => {
+      const lat = ac.lat, lng = ac.lon;
+      if(lat==null||lng==null) return null;
+      if(lat<BBOX.lamin||lat>BBOX.lamax||lng<BBOX.lomin||lng>BBOX.lomax) return null;
+      if(ac.alt_baro==='ground') return null;
+      return {
+        id:       ac.hex,
+        callsign: (ac.flight?.trim()||ac.hex||'').toUpperCase(),
+        country:  ac.r||'Unknown',
+        lat, lng,
+        alt:   typeof ac.alt_baro==='number' ? Math.round(ac.alt_baro) : null,
+        spd:   ac.gs   != null ? Math.round(ac.gs)   : null,
+        hdg:   ac.track ?? 0,
+        vrate: ac.baro_rate != null ? Math.round(ac.baro_rate/196.85*10)/10 : 0,
+      };
+    };
+    const load=async()=>{
+      const sources=[
+        'https://api.airplanes.live/v2/lat/45/lon/20/dist/4000',
+        'https://api.adsb.lol/v2/lat/45/lon/20/dist/4000',
+      ];
+      for(const url of sources){
+        try{
+          const r=await fetch(url,{signal:AbortSignal.timeout(10000)});
+          if(!r.ok) continue;
+          const d=await r.json();
+          const aircraft=(d.ac||[]).map(normalize).filter(Boolean);
+          if(!aircraft.length) continue;
           setAcLoaded(true);
-          if(!Array.isArray(d.aircraft)) return;
-          acData.current=d.aircraft;
-          setAcList([...d.aircraft]);
+          acData.current=aircraft;
+          setAcList([...aircraft]);
           setAcFetchKey(k=>k+1);
-        })
-        .catch(()=>{ setAcLoaded(true); });
+          return;
+        }catch(e){ continue; }
+      }
+      setAcLoaded(true); // mark done even if all failed
     };
     load();
-    const t=setInterval(load,300_000);
+    const t=setInterval(load,60_000);
     return()=>clearInterval(t);
   },[mapReady]);
 
