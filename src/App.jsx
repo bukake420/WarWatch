@@ -83,30 +83,6 @@ const BASE_EVENTS = [
   { id:28, lat:36.2021, lng:37.1343, title:"Aleppo, Syria — IRGC Proxy Strike on US Base", type:"iran", date:"2026-03-22", confidence:"reported", desc:"Rockets fired at Qamishli US outpost in NE Syria, attributed to IRGC-backed militia. No US casualties. F-15s conducted retaliatory strike on militia positions within 2 hours. CENTCOM confirms.", verified:true, wikiPage:"Aleppo" },
 ];
 
-// ─── Static leadership posts (always visible, no API needed) ─────────────────
-const LEADERSHIP_POSTS = [
-  { id:1,  person:"Donald Trump",       role:"US President",               country:"🇺🇸", platform:"Truth Social", handle:"@realDonaldTrump", date:"2026-03-20", time:"11:34", color:"#ef4444", verified:true, text:"Iran has been COMPLETELY NEUTRALIZED. The mission is proceeding exactly as planned — maybe even better! Our brave military has destroyed over 300 missile launchers. The Iranian people deserve FREEDOM. We will finish the job. MAKE AMERICA GREAT AGAIN!" },
-  { id:2,  person:"Benjamin Netanyahu", role:"Israeli PM",                  country:"🇮🇱", platform:"X",            handle:"@netanyahu",       date:"2026-03-19", time:"18:22", color:"#3b82f6", verified:true, text:"To the people of Iran: we have no quarrel with you. Our fight is against the regime that has oppressed you for decades and built weapons to destroy us. We are close to achieving our objectives. Iran can have a future — but not with this regime and not with nuclear weapons." },
-  { id:3,  person:"Masoud Pezeshkian",  role:"Iranian President",           country:"🇮🇷", platform:"X",            handle:"@drpezeshkian",   date:"2026-03-20", time:"09:15", color:"#22c55e", verified:true, text:"Iran did not start this war. We will not surrender to bullies. Every missile fired at our children will be answered. The world watches as the US and Israel bomb hospitals, schools, and civilian homes. History will judge these war criminals." },
-  { id:4,  person:"Donald Trump",       role:"US President",                country:"🇺🇸", platform:"Truth Social", handle:"@realDonaldTrump", date:"2026-03-18", time:"14:05", color:"#ef4444", verified:true, text:"Our NATO 'allies' are COWARDS for not helping us control the Hormuz Strait. We protect them for decades and when we need them, NOTHING. We will REMEMBER! Maybe they should pay their own defense bills from now on. Disgraceful!!!" },
-  { id:5,  person:"Keir Starmer",       role:"UK Prime Minister",           country:"🇬🇧", platform:"X",            handle:"@Keir_Starmer",   date:"2026-02-28", time:"22:10", color:"#a78bfa", verified:true, text:"The UK condemns Iran's counter-strikes against civilian targets. I have spoken with President Trump and PM Netanyahu tonight. I do not believe in regime change from the skies. We urge an immediate return to diplomacy. The Iranian people must not pay the price for their government's actions." },
-  { id:6,  person:"Mojtaba Khamenei",   role:"Iranian Supreme Leader",      country:"🇮🇷", platform:"State Media",  handle:"@Khamenei_ir",    date:"2026-03-01", time:"06:33", color:"#22c55e", verified:true, text:"In the name of God. My father has been martyred by the Zionist enemy and its American masters. I take the oath as Supreme Leader. Iran will not bow. Every grain of Iranian soil will resist. Death to America. Death to Israel. We will turn the Persian Gulf into a sea of fire." },
-  { id:7,  person:"Emmanuel Macron",    role:"French President",             country:"🇫🇷", platform:"X",            handle:"@EmmanuelMacron", date:"2026-03-05", time:"16:50", color:"#60a5fa", verified:true, text:"France calls for an immediate ceasefire. The strikes on civilian infrastructure — hospitals, schools, energy sites — are unacceptable under international law. We are working with Germany and the UK on an emergency EU summit. The energy crisis caused by Hormuz closure is destabilizing all of Europe." },
-  { id:8,  person:"Yoav Gallant",       role:"Israeli Defense Minister",    country:"🇮🇱", platform:"X",            handle:"@yoavgallant",    date:"2026-03-17", time:"20:44", color:"#3b82f6", verified:true, text:"Ali Larijani has been eliminated. The head of Iran's Supreme National Security Council is gone. To every commander in the IRGC: you are on our list. The IDF has destroyed 300 missile launchers. Iran's ability to threaten Israel is being dismantled piece by piece. We are not done." },
-  { id:9,  person:"Narendra Modi",      role:"Indian PM",                   country:"🇮🇳", platform:"X",            handle:"@narendramodi",   date:"2026-03-10", time:"10:22", color:"#f59e0b", verified:true, text:"India calls for immediate de-escalation and protection of civilian lives. The disruption of shipping through the Strait of Hormuz is severely impacting global energy markets and the Indian economy. I spoke with President Trump today and urged restraint. War is never the answer." },
-  { id:10, person:"Pete Hegseth",       role:"US Secretary of Defense",     country:"🇺🇸", platform:"X",            handle:"@PeteHegseth",    date:"2026-03-20", time:"15:00", color:"#ef4444", verified:true, text:"US war objectives remain unchanged: destroy Iran's missile systems and military industry, prevent a nuclear weapon, and neutralize Iran's navy. No set end date. We will continue until the mission is complete. The men and women of our armed forces are performing extraordinarily." },
-  { id:11, person:"Ismail Qaani",       role:"IRGC Quds Force Commander",   country:"🇮🇷", platform:"State Media",  handle:"IRGC Official",   date:"2026-03-15", time:"08:00", color:"#22c55e", verified:false, text:"We have fired over 500 ballistic missiles and 2,000 drones at American and Zionist targets. Forty percent at the Zionist entity, sixty percent at American bases. The resistance will not stop. We will ratify our missiles for a longer war. America will drown in this region." },
-  { id:12, person:"Antonio Guterres",   role:"UN Secretary-General",        country:"🇺🇳", platform:"X",            handle:"@antonioguterres",date:"2026-03-12", time:"12:00", color:"#94a3b8", verified:true, text:"I am horrified by the strikes on civilian infrastructure, including a school in Minab that killed over 170 children. This may constitute a war crime under international law. I call on the Security Council to act immediately. 3 million Iranians have been displaced. The humanitarian situation is catastrophic." },
-  { id:13, person:"Benjamin Netanyahu", role:"Israeli PM",                  country:"🇮🇱", platform:"X",            handle:"@netanyahu",       date:"2026-03-20", time:"20:30", color:"#3b82f6", verified:true, text:"To the Persian people on Nowruz — the new year: we wish you a future of freedom, democracy, and peace. The regime that oppressed you is crumbling. Very soon, you will be able to celebrate freely. Am Yisrael Chai." },
-  { id:14, person:"Donald Trump",       role:"US President",                country:"🇺🇸", platform:"Truth Social", handle:"@realDonaldTrump", date:"2026-03-10", time:"09:00", color:"#ef4444", verified:true, text:"Who knows better about SURPRISE than Japan? I said to PM Takaichi — 'Why didn't you tell me about Pearl Harbor?' (jokingly of course!) The element of surprise won World War II and it is working BEAUTIFULLY in Iran. Our military is the greatest in history!" },
-  { id:15, person:"Scott Bessent",      role:"US Treasury Secretary",       country:"🇺🇸", platform:"X",            handle:"@ScottBessent",   date:"2026-03-19", time:"17:20", color:"#ef4444", verified:true, text:"We are considering unsanctioning Iranian crude oil currently in transit to ease global energy markets. The administration is committed to minimizing economic disruption while achieving our strategic objectives in Iran. Oil prices should stabilize." },
-  { id:16, person:"Donald Trump",       role:"US President",                country:"🇺🇸", platform:"Truth Social", handle:"@realDonaldTrump", date:"2026-03-21", time:"10:15", color:"#ef4444", verified:true, text:"Happy Nowruz to the great Persian people! You deserve FREEDOM and soon you will have it. The evil regime that has oppressed you for 47 years is FINISHED. We are talking to people — good things are happening. Stay strong, beautiful Iran. The best days are ahead!" },
-  { id:17, person:"Benjamin Netanyahu", role:"Israeli PM",                  country:"🇮🇱", platform:"X",            handle:"@netanyahu",       date:"2026-03-21", time:"18:00", color:"#3b82f6", verified:true, text:"نوروز پیروز — Nowruz Piruz. To the Persian people: may this new year bring you the freedom your ancient civilization deserves. The IDF has completed 90% of its objectives. The regime that threatened to wipe us out is crumbling. Chag sameach." },
-  { id:18, person:"Mojtaba Khamenei",   role:"Iranian Supreme Leader",      country:"🇮🇷", platform:"State Media",  handle:"@Khamenei_ir",    date:"2026-03-21", time:"22:30", color:"#22c55e", verified:true, text:"On this Nowruz, Iran bleeds but does not break. We have agreed to explore indirect talks via Oman — not out of weakness, but to expose American hypocrisy to the world. Iran will not negotiate under bombs. All strikes must cease before any framework can be discussed. This is our condition." },
-  { id:19, person:"Emmanuel Macron",    role:"French President",             country:"🇫🇷", platform:"X",            handle:"@EmmanuelMacron", date:"2026-03-22", time:"09:30", color:"#60a5fa", verified:true, text:"France welcomes indirect talks in Muscat. This is the first positive signal in 23 days of war. The EU stands ready to provide a diplomatic framework for a sustainable ceasefire. We call on the US to pause strikes during negotiations. Europe cannot absorb another week of Hormuz closure." },
-  { id:20, person:"Pete Hegseth",       role:"US Secretary of Defense",     country:"🇺🇸", platform:"X",            handle:"@PeteHegseth",    date:"2026-03-22", time:"14:45", color:"#ef4444", verified:true, text:"No pause in operations. Talks in Oman are separate from military objectives. We will continue striking valid military targets until Iran meets our conditions: full cessation of proxy attacks, surrender of enriched uranium stockpiles, and opening of Hormuz. Diplomacy and deterrence go hand in hand." },
-];
-
 const SIM_SCENES = [
   { type:"title",  day:0,  duration:11000, title:"OPERATION EPIC FURY", subtitle:"Iran War 2026 — A Visual Timeline", narrative:"" },
   { type:"title",  day:0,  duration:9000,  title:"February 27, 2026", subtitle:"Oman's FM announces breakthrough in nuclear talks. Peace \"within reach.\"", narrative:"" },
@@ -591,7 +567,7 @@ export default function WarWatch() {
   const [events,     setEvents]     = useState(BASE_EVENTS);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [modalData,  setModalData]  = useState(null);
-  const [dynLeaders, setDynLeaders] = useState([]);
+  const [realLeaders, setRealLeaders] = useState([]);
   const [leadersLoad, setLeadersLoad] = useState(false);
   const [feedUpdatedAt,    setFeedUpdatedAt]    = useState(null);
   const [osintUpdatedAt,   setOsintUpdatedAt]   = useState(null);
@@ -605,7 +581,7 @@ export default function WarWatch() {
     const leaders = readCache("ww_leaders");
     if (feed)    { setFeedItems(feed);     setFeedUpdatedAt(cacheAge("ww_feed")); }
     if (osint)   { setTgItems(osint);      setOsintUpdatedAt(cacheAge("ww_osint")); }
-    if (leaders) { setDynLeaders(leaders); setLeadersUpdatedAt(cacheAge("ww_leaders")); }
+    if (leaders) { setRealLeaders(leaders); setLeadersUpdatedAt(cacheAge("ww_leaders")); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -638,10 +614,10 @@ export default function WarWatch() {
   // Use refs so the interval always calls the latest function version.
   const loadFeedRef    = useRef(null);
   const loadOsintRef   = useRef(null);
-  const loadLeadersRef = useRef(null);
-  useEffect(()=>{ loadFeedRef.current    = loadFeed;    });
-  useEffect(()=>{ loadOsintRef.current   = loadOsint;   });
-  useEffect(()=>{ loadLeadersRef.current = loadLeaders; });
+  const loadRealLeadersRef = useRef(null);
+  useEffect(()=>{ loadFeedRef.current        = loadFeed;        });
+  useEffect(()=>{ loadOsintRef.current       = loadOsint;       });
+  useEffect(()=>{ loadRealLeadersRef.current = loadRealLeaders; });
   useEffect(()=>{
     const iv=setInterval(()=>{
       // Invalidate caches so next call fetches fresh content
@@ -650,7 +626,7 @@ export default function WarWatch() {
       localStorage.removeItem("ww_leaders");
       if(tgItems.length>0)   loadOsintRef.current?.();
       if(feedItems.length>0) loadFeedRef.current?.();
-      loadLeadersRef.current?.();
+      loadRealLeadersRef.current?.();
     },8*60*60*1000); // every 8 hours → ~3× per day
     return()=>clearInterval(iv);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -664,7 +640,7 @@ export default function WarWatch() {
 
   // Auto-load leaders when user first opens the tab (cache-first — no charge if warm)
   useEffect(()=>{
-    if(tab==="leaders" && dynLeaders.length===0 && !leadersLoad) loadLeaders();
+    if(tab==="leaders" && realLeaders.length===0 && !leadersLoad) loadRealLeaders();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[tab]);
 
@@ -682,14 +658,10 @@ export default function WarWatch() {
   // Leadership posts filtered (static + dynamically generated)
   const filteredLeaders = useMemo(()=>{
     setVisibleLeaders(5);
-    const dayCutoff = new Date(WAR_START); dayCutoff.setDate(dayCutoff.getDate()+tDay);
-    const staticPosts = LEADERSHIP_POSTS.filter(p=>new Date(p.date)<=dayCutoff);
-    // Dynamic posts are always for today — show them regardless of timeline day
-    const allPosts = tDay>=MAX_DAY ? [...staticPosts,...dynLeaders] : staticPosts;
-    let posts = [...new Map(allPosts.map(p=>[p.id,p])).values()]; // dedup by id
+    let posts = [...realLeaders];
     if(leaderFilter!=="all") posts=posts.filter(p=>p.country===leaderFilter);
-    return [...posts].sort((a,b)=>new Date(b.date+"T"+b.time)-new Date(a.date+"T"+a.time));
-  },[tDay,leaderFilter,dynLeaders]);
+    return posts.sort((a,b)=>new Date(b.date+"T"+b.time)-new Date(a.date+"T"+a.time));
+  },[leaderFilter,realLeaders]);
 
   const dayCasualties = useMemo(()=>({
     killed:Math.round(1700*(tDay/MAX_DAY)),
@@ -833,31 +805,20 @@ export default function WarWatch() {
     });
   },[mapReady,layers.shipping]);
 
-  const loadLeaders=async()=>{
+  const loadRealLeaders=async()=>{
     const cached=readCache("ww_leaders");
-    if(cached){setDynLeaders(cached);setLeadersUpdatedAt(cacheAge("ww_leaders"));return;}
+    if(cached){setRealLeaders(cached);setLeadersUpdatedAt(cacheAge("ww_leaders"));return;}
     setLeadersLoad(true);
     try{
-      const today=dayToDate(MAX_DAY);
-      const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-haiku-4-5-20251001",max_tokens:800,
-        system:"You are a JSON generator. Respond with ONLY a raw JSON array. No markdown, no code fences.",
-        messages:[{role:"user",content:`Generate 5 new political/military leader posts for the 2026 Iran War, ${today} (Day ${MAX_DAY+1}).
-Reflect latest developments: Oman indirect peace talks, Hormuz closure, Day ${MAX_DAY+1} battlefield situation.
-Leaders: choose 5 from Trump, Netanyahu, Pezeshkian, Macron, Hegseth.
-Return JSON array, each object with these exact keys:
-id (integer 3001-3005), person (string), role (string), country (flag emoji like 🇺🇸), platform (string), handle (string starting with @), date ("${today.replace(/[A-Za-z]+ /,`2026-03-`).padStart(10,"0")}"), time ("HH:MM"), color (hex color string), verified (boolean), text (post content 1-3 sentences)`}]})});
-      if(!r.ok) return;
+      const r=await fetch("/api/leaders");
       const d=await r.json();
-      const raw=d.content[0].text;
-      const s=raw.indexOf("["),e=raw.lastIndexOf("]");
-      if(s===-1||e===-1) return;
-      const posts=JSON.parse(raw.slice(s,e+1));
-      if(!Array.isArray(posts)||posts.length===0) return;
-      setDynLeaders(posts);
-      writeCache("ww_leaders",posts);
-      setLeadersUpdatedAt(Date.now());
-    }catch(e){console.error("loadLeaders:",e);}
+      if(d.error) console.warn("Leaders API:",d.error);
+      if(Array.isArray(d.posts)&&d.posts.length>0){
+        setRealLeaders(d.posts);
+        writeCache("ww_leaders",d.posts);
+        setLeadersUpdatedAt(Date.now());
+      }
+    }catch(e){console.error("loadRealLeaders:",e);}
     setLeadersLoad(false);
   };
 
@@ -1026,7 +987,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
   const tgColor=ch=>TG_CHANNELS.find(c=>c.handle===ch)?.color||"#94a3b8";
   const tgNation=ch=>TG_CHANNELS.find(c=>c.handle===ch)?.nation||"📡";
 
-  const countryOptions = [...new Set(LEADERSHIP_POSTS.map(p=>p.country))];
+  const countryOptions = [...new Set(realLeaders.map(p=>p.country))];
 
   if(simMode) return <WarSimulation onClose={()=>setSimMode(false)}/>;
 
@@ -1462,10 +1423,14 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             {/* ── LEADERSHIP POSTS ── */}
             {tab==="leaders" && (
               <div>
-                {leadersLoad&&<Spinner color="#a78bfa" label="GENERATING LEADER POSTS"/>}
+                {leadersLoad&&<Spinner color="#a78bfa" label="FETCHING LEADER POSTS"/>}
                 {filteredLeaders.length===0 && !leadersLoad && (
-                  <div style={{textAlign:"center",padding:"24px",color:"#7090a8",fontSize:12,fontFamily:"'Share Tech Mono',monospace"}}>
-                    No posts available for Day {tDay+1}
+                  <div style={{textAlign:"center",padding:"24px",color:"#7090a8",fontSize:12,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.8}}>
+                    No posts yet.<br/>
+                    <span style={{fontSize:10,color:"#4a6070"}}>Add <span style={{color:"#22c55e"}}>TWITTER_BEARER_TOKEN</span> in Netlify env vars to pull real posts from Trump, Netanyahu, IDF, CENTCOM and others.</span>
+                    <div style={{marginTop:12}}>
+                      <button className="abtn" onClick={loadRealLeaders} style={{borderColor:"#2a3d50",color:"#7090a8"}}>↻ RETRY</button>
+                    </div>
                   </div>
                 )}
                 {filteredLeaders.slice(0,visibleLeaders).map(post=>(
@@ -1488,6 +1453,8 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                     </div>
                     <div style={{fontSize:10,color:"#6080a0",fontFamily:"'Share Tech Mono',monospace",marginBottom:6}}>{post.handle}</div>
                     <div style={{fontSize:13,color:"#b8ccd8",lineHeight:1.7}}>{post.text}</div>
+                    {post.url&&<a href={post.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",marginTop:6,fontSize:9,color:"#3b82f6",fontFamily:"'Share Tech Mono',monospace",textDecoration:"none",letterSpacing:1}}>↗ VIEW ON X</a>}
+                    {(post.likes>0||post.retweets>0)&&<div style={{marginTop:4,fontSize:9,color:"#4a6070",fontFamily:"'Share Tech Mono',monospace"}}>♥ {post.likes?.toLocaleString()} · ↺ {post.retweets?.toLocaleString()}</div>}
                   </div>
                 ))}
                 {visibleLeaders < filteredLeaders.length && (
@@ -1500,9 +1467,9 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                 )}
                 {leadersUpdatedAt&&(
                   <div style={{textAlign:"center",padding:"6px 0 10px",fontSize:9,color:"#374151",fontFamily:"'Share Tech Mono',monospace"}}>
-                    LIVE POSTS · CACHED {new Date(leadersUpdatedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
-                    <button className="abtn" onClick={()=>{localStorage.removeItem("ww_leaders");setDynLeaders([]);loadLeaders();}}
-                      style={{display:"block",margin:"4px auto 0",borderColor:"#1a2a3a",color:"#374151",fontSize:8}}>↻ RELOAD POSTS</button>
+                    LIVE · CACHED {new Date(leadersUpdatedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
+                    <button className="abtn" onClick={()=>{localStorage.removeItem("ww_leaders");setRealLeaders([]);loadRealLeaders();}}
+                      style={{display:"block",margin:"4px auto 0",borderColor:"#1a2a3a",color:"#374151",fontSize:8}}>↻ REFRESH</button>
                   </div>
                 )}
               </div>
