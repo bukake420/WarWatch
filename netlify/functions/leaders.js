@@ -1,19 +1,47 @@
-// leaders.js — real leader posts via RSS feeds + Claude AI relevance filtering
-// + Netlify Blobs for persistent accumulation (history grows over time).
+// leaders.js — real posts/statements from world leaders and official sources.
+// All URLs verified working. No API keys required.
 //
-// Zero required env vars — works on first deploy.
 // Optional: TELEGRAM_BOT_TOKEN (see .env.example)
 
 const { getStore } = require("@netlify/blobs");
 
+// Verified-working RSS/Atom sources as of 2026-03
 const RSS_SOURCES = [
-  { person:"Donald Trump",       role:"US President",          country:"🇺🇸", color:"#ef4444", platform:"Truth Social", handle:"@realDonaldTrump", url:"https://truthsocial.com/@realDonaldTrump.rss",           useDesc:true  },
-  { person:"IDF Spokesperson",   role:"Israel Defense Forces", country:"🇮🇱", color:"#3b82f6", platform:"IDF Press",    handle:"@IDF",             url:"https://www.idf.il/en/rss/",                             useDesc:false },
-  { person:"US CENTCOM",         role:"US Central Command",    country:"🇺🇸", color:"#ef4444", platform:"CENTCOM",      handle:"@CENTCOM",         url:"https://www.centcom.mil/RSS/",                           useDesc:false },
-  { person:"Benjamin Netanyahu", role:"Israeli PM",            country:"🇮🇱", color:"#3b82f6", platform:"Gov.il",       handle:"@netanyahu",       url:"https://www.gov.il/en/rss/PM",                          useDesc:false },
-  { person:"António Guterres",   role:"UN Secretary-General",  country:"🇺🇳", color:"#94a3b8", platform:"UN.org",       handle:"@antonioguterres", url:"https://www.un.org/sg/en/media/statements.xml",          useDesc:false },
-  { person:"Keir Starmer",       role:"UK Prime Minister",     country:"🇬🇧", color:"#a78bfa", platform:"Gov.uk",       handle:"@Keir_Starmer",    url:"https://www.gov.uk/government/people/keir-starmer.atom", useDesc:false },
-  { person:"Emmanuel Macron",    role:"French President",      country:"🇫🇷", color:"#60a5fa", platform:"Élysée",       handle:"@EmmanuelMacron",  url:"https://www.elysee.fr/rss",                             useDesc:false },
+  // White House — Trump's official statements and communications
+  {
+    person:"Donald Trump", role:"US President", country:"🇺🇸", color:"#ef4444",
+    platform:"White House", handle:"@POTUS",
+    url:"https://www.whitehouse.gov/news/feed/",
+    useDesc:false,
+  },
+  // UK Government — Keir Starmer official readouts (highly active on Middle East conflict)
+  {
+    person:"Keir Starmer", role:"UK Prime Minister", country:"🇬🇧", color:"#a78bfa",
+    platform:"Gov.uk", handle:"@Keir_Starmer",
+    url:"https://www.gov.uk/search/news-and-communications.atom?people%5B%5D=keir-starmer",
+    useDesc:false,
+  },
+  // US Department of Defense — Hegseth/Pentagon official releases
+  {
+    person:"US Dept of Defense", role:"Pentagon", country:"🇺🇸", color:"#f97316",
+    platform:"Defense.gov", handle:"@DeptofDefense",
+    url:"https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=10",
+    useDesc:false,
+  },
+  // UN Press — Secretary-General Guterres statements and Security Council coverage
+  {
+    person:"António Guterres", role:"UN Secretary-General", country:"🇺🇳", color:"#94a3b8",
+    platform:"UN.org", handle:"@antonioguterres",
+    url:"https://press.un.org/en/rss.xml",
+    useDesc:false,
+  },
+  // Al Jazeera — broad Middle East war coverage including direct leader quotes
+  {
+    person:"Al Jazeera", role:"Middle East Coverage", country:"🌍", color:"#eab308",
+    platform:"Al Jazeera", handle:"@AJEnglish",
+    url:"https://www.aljazeera.com/xml/rss/all.xml",
+    useDesc:true,
+  },
 ];
 
 const TELEGRAM_CHANNELS = {
@@ -22,9 +50,9 @@ const TELEGRAM_CHANNELS = {
   "@PezeshkianIR":    { person:"Masoud Pezeshkian", role:"Iranian President",      country:"🇮🇷", color:"#22c55e" },
 };
 
-// Short in-memory cache to absorb burst traffic without re-hitting Blobs
+// Short in-memory cache to absorb burst traffic
 let memCache = { posts: null, ts: 0 };
-const MEM_TTL = 5 * 60 * 1000; // 5 minutes
+const MEM_TTL = 5 * 60 * 1000;
 
 // ── RSS / Atom XML parser ────────────────────────────────────────────────────
 function parseRSS(xml) {
@@ -57,6 +85,7 @@ function stripHtml(s) {
     .replace(/<[^>]+>/g, " ")
     .replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">")
     .replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&nbsp;/g," ")
+    .replace(/&#\d+;/g, c => { try { return String.fromCharCode(parseInt(c.slice(2,-1))); } catch { return ""; } })
     .replace(/\s+/g," ").trim();
 }
 
@@ -71,17 +100,24 @@ function parseDate(s) {
 
 async function fetchSource(source) {
   const r = await fetch(source.url, {
-    headers: { "User-Agent":"Mozilla/5.0 (compatible; WarWatch/1.0)", "Accept":"application/rss+xml,application/atom+xml,text/xml,*/*" },
-    signal: AbortSignal.timeout(8000),
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept":     "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+    },
+    signal: AbortSignal.timeout(10000),
   });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status} from ${source.url}`);
   const items = parseRSS(await r.text());
   return items.map(item => {
     const headline = stripHtml(item.title);
     const body     = stripHtml(item.desc);
-    const text     = source.useDesc
-      ? (body || headline)
-      : (body ? `${headline} — ${body.slice(0, 220)}${body.length > 220 ? "…" : ""}` : headline);
+    let text;
+    if (source.useDesc) {
+      text = body || headline;
+    } else {
+      const snippet = body ? body.slice(0, 280) + (body.length > 280 ? "…" : "") : "";
+      text = snippet ? `${headline} — ${snippet}` : headline;
+    }
     if (!text) return null;
     const { date, time } = parseDate(item.pubDate);
     return {
@@ -104,8 +140,7 @@ async function fetchTelegram(token) {
   try {
     const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100`, { signal: AbortSignal.timeout(6000) });
     if (!r.ok) return [];
-    const updates = (await r.json()).result || [];
-    return updates.flatMap(u => {
+    return (await r.json()).result?.flatMap(u => {
       const msg  = u.channel_post || u.message;
       if (!msg) return [];
       const text = msg.text || msg.caption || "";
@@ -115,117 +150,107 @@ async function fetchTelegram(token) {
       const d     = new Date(msg.date * 1000);
       return [{
         id:`tg-${msg.chat.id}-${msg.message_id}`, person:meta.person, role:meta.role,
-        country:meta.country, platform:"Telegram", handle:uname || String(msg.chat.id),
+        country:meta.country, platform:"Telegram", handle: uname || String(msg.chat.id),
         date:d.toISOString().slice(0,10), time:d.toISOString().slice(11,16),
-        color:meta.color, verified:true,
-        text:text.slice(0,500),
+        color:meta.color, verified:true, text:text.slice(0,500),
         url: uname ? `https://t.me/${uname.slice(1)}/${msg.message_id}` : "",
       }];
-    });
+    }) || [];
   } catch { return []; }
 }
 
 // ── Claude Haiku relevance filter ────────────────────────────────────────────
-// Sends up to 30 new posts to Claude and asks it to return only relevant ones.
 async function filterRelevant(posts, apiKey) {
   if (!posts.length) return [];
-  if (!apiKey)       return posts; // no key → keep all (better than showing nothing)
+  if (!apiKey)       return posts;
 
   const prompt = posts.map((p, i) => `[${i}] ${p.person}: ${p.text.slice(0, 220)}`).join("\n");
-
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type":"application/json", "x-api-key":apiKey, "anthropic-version":"2023-06-01" },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 150,
+        max_tokens: 200,
         system: "You are a relevance classifier. Respond with ONLY a JSON array of indices, e.g. [0,2,5]. Nothing else.",
         messages: [{ role:"user", content:
-          `Which posts are directly relevant to the ongoing Israel/Iran/Gaza/Middle East military conflict — military ops, ceasefire talks, hostages, Iran nuclear program, US military involvement, or Israeli/Palestinian conflict? Exclude posts about domestic economy, weather, sports, unrelated policy.\n\nPosts:\n${prompt}\n\nReturn ONLY a JSON array of relevant indices.`
+          `Which posts are directly relevant to the ongoing Israel/Iran/Gaza/Middle East military conflict — military operations, ceasefire negotiations, hostages, Iran nuclear program, US military involvement, Strait of Hormuz, or Israeli/Palestinian conflict?\n\nPosts:\n${prompt}\n\nReturn ONLY a JSON array of relevant indices.`
         }],
       }),
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(15000),
     });
     if (!r.ok) return posts;
-    const d    = await r.json();
-    const raw  = (d.content?.[0]?.text || "").trim();
+    const raw  = ((await r.json()).content?.[0]?.text || "").trim();
     const s    = raw.indexOf("["), e = raw.lastIndexOf("]");
     if (s === -1) return posts;
     const idxs = JSON.parse(raw.slice(s, e + 1));
-    return idxs.filter(i => i >= 0 && i < posts.length).map(i => posts[i]);
+    const filtered = idxs.filter(i => i >= 0 && i < posts.length).map(i => posts[i]);
+    // If Claude filtered everything out, return the originals (better than empty)
+    return filtered.length > 0 ? filtered : posts;
   } catch { return posts; }
 }
 
 // ── Netlify Blobs helpers ────────────────────────────────────────────────────
 async function loadStoredPosts() {
   try {
-    const store = getStore("leaders-posts");
-    const data  = await store.get("posts", { type:"json" });
+    const data = await getStore("leaders-posts").get("posts", { type:"json" });
     return Array.isArray(data) ? data : [];
   } catch { return []; }
 }
 
 async function saveStoredPosts(posts) {
-  try {
-    const store = getStore("leaders-posts");
-    await store.setJSON("posts", posts);
-  } catch (e) { console.warn("Blobs save failed:", e.message); }
+  try { await getStore("leaders-posts").setJSON("posts", posts); }
+  catch (e) { console.warn("Blobs save:", e.message); }
 }
 
 // ── Main handler ─────────────────────────────────────────────────────────────
 exports.handler = async () => {
-  // Serve from in-memory cache if fresh
   if (memCache.posts && Date.now() - memCache.ts < MEM_TTL) {
     return ok(memCache.posts, true);
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
-  // 1. Load what we've already accumulated
   const stored    = await loadStoredPosts();
   const storedIds = new Set(stored.map(p => p.url || p.id));
 
-  // 2. Fetch fresh RSS posts from all sources in parallel
-  const settled   = await Promise.allSettled(RSS_SOURCES.map(fetchSource));
-  let freshPosts  = settled.flatMap(r => r.status === "fulfilled" ? r.value : []);
+  // Fetch all RSS sources in parallel — failures don't break others
+  const settled  = await Promise.allSettled(RSS_SOURCES.map(fetchSource));
+  let freshPosts = settled.flatMap(r => r.status === "fulfilled" ? r.value : []);
 
-  // 3. Add Telegram if configured
+  // Log failures for debugging
+  settled.forEach((r, i) => {
+    if (r.status === "rejected") console.warn(`Feed failed [${RSS_SOURCES[i].handle}]:`, r.reason?.message);
+  });
+
+  // Add Telegram if configured
   const tgToken = process.env.TELEGRAM_BOT_TOKEN;
   if (tgToken) {
     const tgPosts = await fetchTelegram(tgToken);
     freshPosts = [...freshPosts, ...tgPosts];
   }
 
-  // 4. Identify posts not yet in the store
+  // Only process posts we haven't seen before
   const newPosts = freshPosts.filter(p => !storedIds.has(p.url || p.id));
 
-  // 5. If there are new posts, send them to Claude to filter for relevance (batch of 30)
   let toAdd = [];
   if (newPosts.length > 0) {
     const batch = newPosts.slice(0, 30);
     toAdd = await filterRelevant(batch, apiKey);
   }
 
-  // 6. Merge: new relevant posts + existing stored posts, dedup by url/id, newest-first
-  const seen    = new Set();
-  const merged  = [...toAdd, ...stored].filter(p => {
+  const seen   = new Set();
+  const merged = [...toAdd, ...stored].filter(p => {
     const key = p.url || p.id;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).sort((a, b) => {
-    const da = new Date(`${a.date}T${a.time || "00:00"}Z`);
-    const db = new Date(`${b.date}T${b.time || "00:00"}Z`);
-    return db - da;
-  });
+  }).sort((a, b) =>
+    new Date(`${b.date}T${b.time || "00:00"}Z`) - new Date(`${a.date}T${a.time || "00:00"}Z`)
+  );
 
-  // 7. Persist updated list (cap stored at 200 posts to stay lean)
-  if (toAdd.length > 0) {
-    await saveStoredPosts(merged.slice(0, 200));
-  }
+  if (toAdd.length > 0) await saveStoredPosts(merged.slice(0, 200));
 
-  // 8. Return top 50 to the client
   const posts = merged.slice(0, 50);
   memCache = { posts, ts: Date.now() };
   return ok(posts, false);
