@@ -1426,8 +1426,8 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                 {leadersLoad&&<Spinner color="#a78bfa" label="FETCHING LEADER POSTS"/>}
                 {filteredLeaders.length===0 && !leadersLoad && (
                   <div style={{textAlign:"center",padding:"24px",color:"#7090a8",fontSize:12,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.8}}>
-                    No posts yet.<br/>
-                    <span style={{fontSize:10,color:"#4a6070"}}>Add <span style={{color:"#22c55e"}}>TWITTER_BEARER_TOKEN</span> in Netlify env vars to pull real posts from Trump, Netanyahu, IDF, CENTCOM and others.</span>
+                    No relevant posts found.<br/>
+                    <span style={{fontSize:10,color:"#4a6070"}}>Fetching from Truth Social, IDF, CENTCOM, UN &amp; official gov feeds. Posts appear when leaders mention the conflict.</span>
                     <div style={{marginTop:12}}>
                       <button className="abtn" onClick={loadRealLeaders} style={{borderColor:"#2a3d50",color:"#7090a8"}}>↻ RETRY</button>
                     </div>
