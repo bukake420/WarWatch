@@ -3,6 +3,12 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[functions]
+  node_bundler = "esbuild"
+
+[functions."leaders"]
+  timeout = 30
+
 [[headers]]
   for = "/*"
   [headers.values]
