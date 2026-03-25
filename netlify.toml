@@ -6,6 +6,9 @@
 [functions."leaders"]
   timeout = 30
 
+[functions."update"]
+  timeout = 60
+
 [[redirects]]
   from = "/api/leaders"
   to = "/.netlify/functions/leaders"
@@ -19,6 +22,11 @@
 [[redirects]]
   from = "/api/aircraft"
   to = "/.netlify/functions/aircraft"
+  status = 200
+
+[[redirects]]
+  from = "/api/update"
+  to = "/.netlify/functions/update"
   status = 200
 
 [[headers]]
