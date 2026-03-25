@@ -731,25 +731,23 @@ export default function WarWatch() {
       };
     };
     const load=async()=>{
-      const sources=[
-        'https://api.airplanes.live/v2/lat/45/lon/20/dist/4000',
-        'https://api.adsb.lol/v2/lat/45/lon/20/dist/4000',
-      ];
-      for(const url of sources){
-        try{
-          const r=await fetch(url,{signal:AbortSignal.timeout(10000)});
-          if(!r.ok) continue;
-          const d=await r.json();
-          const aircraft=(d.ac||[]).map(normalize).filter(Boolean);
-          if(!aircraft.length) continue;
-          setAcLoaded(true);
-          acData.current=aircraft;
-          setAcList([...aircraft]);
-          setAcFetchKey(k=>k+1);
-          return;
-        }catch(e){ continue; }
-      }
-      setAcLoaded(true); // mark done even if all failed
+      try{
+        const r=await fetch('/api/aircraft',{signal:AbortSignal.timeout(15000)});
+        if(!r.ok) return;
+        const d=await r.json();
+        const aircraft=(d.aircraft||[]).map(ac=>{
+          // already normalized by the server-side function
+          if(ac.lat==null||ac.lng==null) return null;
+          if(ac.lat<BBOX.lamin||ac.lat>BBOX.lamax||ac.lng<BBOX.lomin||ac.lng>BBOX.lomax) return null;
+          return ac;
+        }).filter(Boolean);
+        if(!aircraft.length) return;
+        setAcLoaded(true);
+        acData.current=aircraft;
+        setAcList([...aircraft]);
+        setAcFetchKey(k=>k+1);
+      }catch(e){ /* silent */ }
+      setAcLoaded(true);
     };
     load();
     const t=setInterval(load,60_000);

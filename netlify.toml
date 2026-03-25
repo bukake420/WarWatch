@@ -6,6 +6,21 @@
 [functions."leaders"]
   timeout = 30
 
+[[redirects]]
+  from = "/api/leaders"
+  to = "/.netlify/functions/leaders"
+  status = 200
+
+[[redirects]]
+  from = "/api/events"
+  to = "/.netlify/functions/events"
+  status = 200
+
+[[redirects]]
+  from = "/api/aircraft"
+  to = "/.netlify/functions/aircraft"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
