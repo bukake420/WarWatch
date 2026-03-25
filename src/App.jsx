@@ -572,6 +572,14 @@ export default function WarWatch() {
   const [feedUpdatedAt,    setFeedUpdatedAt]    = useState(null);
   const [osintUpdatedAt,   setOsintUpdatedAt]   = useState(null);
   const [leadersUpdatedAt, setLeadersUpdatedAt] = useState(null);
+  // Admin panel state
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminPwInput,   setAdminPwInput]   = useState('');
+  const [adminMode,      setAdminMode]      = useState(false);
+  const [liveStats,      setLiveStats]      = useState(null);
+  const [updateLoading,  setUpdateLoading]  = useState(false);
+  const [updateStatus,   setUpdateStatus]   = useState('');
+  const [updateLog,      setUpdateLog]      = useState([]);
   const mainTileRef = useRef(null);
 
   // On startup, hydrate from localStorage cache (no API call if < 8 hours old)
@@ -579,9 +587,11 @@ export default function WarWatch() {
     const feed    = readCache("ww_feed");
     const osint   = readCache("ww_osint");
     const leaders = readCache("ww_leaders");
-    if (feed)    { setFeedItems(feed);     setFeedUpdatedAt(cacheAge("ww_feed")); }
-    if (osint)   { setTgItems(osint);      setOsintUpdatedAt(cacheAge("ww_osint")); }
+    const stats   = readCache("ww_stats");
+    if (feed)    { setFeedItems(feed);      setFeedUpdatedAt(cacheAge("ww_feed")); }
+    if (osint)   { setTgItems(osint);       setOsintUpdatedAt(cacheAge("ww_osint")); }
     if (leaders) { setRealLeaders(leaders); setLeadersUpdatedAt(cacheAge("ww_leaders")); }
+    if (stats)   { setLiveStats(stats); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -713,7 +723,7 @@ export default function WarWatch() {
   // Fetch live aircraft directly from browser (avoids Netlify function timeouts/IP blocks)
   useEffect(()=>{
     if(!mapReady) return;
-    const BBOX = { lamin:5, lomin:-10, lamax:65, lomax:95 };
+    const BBOX = { lamin:15, lomin:29, lamax:42, lomax:65 }; // conflict zone only
     const normalize = ac => {
       const lat = ac.lat, lng = ac.lon;
       if(lat==null||lng==null) return null;
@@ -821,6 +831,69 @@ export default function WarWatch() {
       }
     }catch(e){console.error("loadRealLeaders:",e);}
     setLeadersLoad(false);
+  };
+
+  // ── Admin: AI-powered full-site update ──────────────────────────────────────
+  const doAdminUpdate=async()=>{
+    setUpdateLoading(true);
+    setUpdateStatus("Searching for latest information…");
+    setUpdateLog([]);
+    try{
+      const r=await fetch("/api/update",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({token:adminPwInput}),
+      });
+      const data=await r.json();
+      if(!r.ok) throw new Error(data.error||`HTTP ${r.status}`);
+
+      const {update}=data;
+      const log=[];
+
+      if(update.stats){
+        setLiveStats(update.stats);
+        writeCache("ww_stats",update.stats);
+        log.push("✓ Stats updated");
+      }
+      if(update.leaderPosts?.length){
+        // Prepend new posts, keep older ones, cap at 150
+        setRealLeaders(prev=>{
+          const merged=[...update.leaderPosts,...prev].slice(0,150);
+          writeCache("ww_leaders",merged);
+          return merged;
+        });
+        setLeadersUpdatedAt(Date.now());
+        log.push(`✓ ${update.leaderPosts.length} leader posts added`);
+      }
+      if(update.osintPosts?.length){
+        setTgItems(prev=>{
+          const merged=[...update.osintPosts,...prev].slice(0,150);
+          writeCache("ww_osint",merged);
+          return merged;
+        });
+        setOsintUpdatedAt(Date.now());
+        log.push(`✓ ${update.osintPosts.length} OSINT posts added`);
+      }
+      if(update.events?.length){
+        setEvents(prev=>{
+          const existIds=new Set(prev.map(e=>e.id));
+          const newEvs=update.events.filter(e=>!existIds.has(e.id));
+          return newEvs.length ? [...newEvs,...prev] : prev;
+        });
+        log.push(`✓ ${update.events.length} new events checked`);
+      }
+      if(update.sitrep){
+        setSitrep(update.sitrep);
+        log.push("✓ Situation report updated");
+      }
+
+      setUpdateLog(log);
+      setUpdateStatus(`✓ Updated at ${new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`);
+    }catch(e){
+      setUpdateStatus("✗ "+e.message);
+      setUpdateLog(["Error: "+e.message]);
+    }
+    setUpdateLoading(false);
   };
 
   const genSitrep=async()=>{
@@ -1278,9 +1351,79 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
         .simbtn:hover{background:linear-gradient(135deg,#300a0a,#4a0c0c);box-shadow:0 0 18px #ef444444}
         input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:#1a2a3a;outline:none;border-radius:2px;cursor:pointer}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#f59e0b;cursor:pointer;box-shadow:0 0 8px #f59e0b88}
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
       `}</style>
 
       <DetailModal/>
+
+      {/* ═══ ADMIN LOGIN MODAL ═══ */}
+      {showAdminLogin&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setShowAdminLogin(false)}>
+          <div style={{background:"#07111a",border:"1px solid #1e3a50",padding:"28px 32px",width:320,maxWidth:"90vw"}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontFamily:"'Orbitron',monospace",fontSize:13,color:"#60a5fa",letterSpacing:3,marginBottom:18}}>⚙ ADMIN ACCESS</div>
+            <div style={{fontSize:11,color:"#5a7888",marginBottom:14,fontFamily:"'Share Tech Mono',monospace"}}>Enter admin password to access site control panel</div>
+            <input
+              autoFocus
+              type="password"
+              value={adminPwInput}
+              onChange={e=>setAdminPwInput(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter"){setAdminMode(true);setShowAdminLogin(false);}}}
+              placeholder="Password"
+              style={{width:"100%",background:"#040a10",border:"1px solid #1e3a50",color:"#90b8d0",padding:"8px 12px",fontFamily:"'Share Tech Mono',monospace",fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:14}}
+            />
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>{setAdminMode(true);setShowAdminLogin(false);}} style={{flex:1,background:"#0a2236",border:"1px solid #2a6090",color:"#60a5fa",padding:"8px",fontFamily:"'Orbitron',monospace",fontSize:11,cursor:"pointer",letterSpacing:2}}>ENTER</button>
+              <button onClick={()=>setShowAdminLogin(false)} style={{background:"transparent",border:"1px solid #1e2d3d",color:"#4a6070",padding:"8px 14px",fontFamily:"'Share Tech Mono',monospace",fontSize:11,cursor:"pointer"}}>CANCEL</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ ADMIN PANEL (floating, bottom-right) ═══ */}
+      {adminMode&&(
+        <div style={{position:"fixed",bottom:16,right:16,width:300,background:"#060d16",border:"1px solid #1e4060",zIndex:8000,boxShadow:"0 0 40px #00000080"}}>
+          {/* Header */}
+          <div style={{background:"#08192a",borderBottom:"1px solid #1e3a50",padding:"8px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontFamily:"'Orbitron',monospace",fontSize:11,color:"#60a5fa",letterSpacing:2}}>⚙ WARWATCH ADMIN</span>
+            <button onClick={()=>setAdminMode(false)} style={{background:"transparent",border:"none",color:"#4a6070",cursor:"pointer",fontSize:14,padding:"0 4px"}}>✕</button>
+          </div>
+          {/* Body */}
+          <div style={{padding:"14px"}}>
+            <div style={{fontSize:10,color:"#4a7090",fontFamily:"'Share Tech Mono',monospace",marginBottom:10,lineHeight:1.6}}>
+              UPDATE uses Claude Sonnet + web search to research current news and add fresh content to all sections.
+            </div>
+            {/* UPDATE button */}
+            <button
+              onClick={doAdminUpdate}
+              disabled={updateLoading}
+              style={{width:"100%",background:updateLoading?"#0a1a28":"linear-gradient(135deg,#0a2236,#0f3050)",border:"1px solid "+(updateLoading?"#1e3040":"#2a6090"),color:updateLoading?"#4a7090":"#60a5fa",padding:"10px",fontFamily:"'Orbitron',monospace",fontSize:12,cursor:updateLoading?"not-allowed":"pointer",letterSpacing:2,marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
+            >
+              {updateLoading
+                ? <><span style={{animation:"spin 1s linear infinite",display:"inline-block"}}>◌</span> SEARCHING…</>
+                : "⟳ UPDATE ALL"}
+            </button>
+            {/* Status */}
+            {updateStatus&&(
+              <div style={{fontSize:10,fontFamily:"'Share Tech Mono',monospace",color:updateStatus.startsWith("✓")?"#22c55e":"#ef4444",marginBottom:8,padding:"4px 6px",background:"#040a10",border:"1px solid #0c1824"}}>{updateStatus}</div>
+            )}
+            {/* Log */}
+            {updateLog.length>0&&(
+              <div style={{fontSize:10,fontFamily:"'Share Tech Mono',monospace",color:"#5a8090",lineHeight:1.9,padding:"6px 8px",background:"#040a10",border:"1px solid #0c1824",marginBottom:10}}>
+                {updateLog.map((l,i)=><div key={i}>{l}</div>)}
+              </div>
+            )}
+            {/* Quick actions */}
+            <div style={{fontSize:9,color:"#2a4050",fontFamily:"'Share Tech Mono',monospace",marginBottom:6,letterSpacing:1}}>QUICK ACTIONS</div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <button onClick={()=>{setLiveStats(null);localStorage.removeItem("ww_stats");setUpdateStatus("Stats reset to timeline defaults");}} style={{background:"transparent",border:"1px solid #1e2d3d",color:"#4a6070",padding:"5px 8px",fontFamily:"'Share Tech Mono',monospace",fontSize:9,cursor:"pointer",textAlign:"left",letterSpacing:1}}>↺ RESET STATS TO TIMELINE</button>
+              <button onClick={()=>{["ww_leaders","ww_osint","ww_stats"].forEach(k=>localStorage.removeItem(k));setRealLeaders([]);setTgItems([]);setLiveStats(null);setUpdateStatus("All caches cleared");}} style={{background:"transparent",border:"1px solid #2a1010",color:"#6a3030",padding:"5px 8px",fontFamily:"'Share Tech Mono',monospace",fontSize:9,cursor:"pointer",textAlign:"left",letterSpacing:1}}>✕ CLEAR ALL CACHES</button>
+            </div>
+            <div style={{marginTop:10,fontSize:9,color:"#1e3040",fontFamily:"'Share Tech Mono',monospace",borderTop:"1px solid #0c1824",paddingTop:8}}>
+              Set ADMIN_TOKEN env var in Netlify to secure this panel. ANTHROPIC_API_KEY required for update.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ HEADER ═══ */}
       <div style={{background:"#070b12",borderBottom:"1px solid #0c1824",padding:"6px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,gap:8}}>
@@ -1322,22 +1465,23 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             </div>
           </div>
           <button className="simbtn" onClick={()=>setSimMode(true)}><span style={{fontSize:15}}>▶</span> WAR TIMELINE</button>
+          <button onClick={()=>setShowAdminLogin(true)} title="Admin" style={{background:"transparent",border:"1px solid #1a2d3d",color:"#3a5570",padding:"5px 9px",fontFamily:"'Share Tech Mono',monospace",fontSize:13,cursor:"pointer",borderRadius:2,lineHeight:1,flexShrink:0}} onMouseEnter={e=>e.currentTarget.style.color="#5a8090"} onMouseLeave={e=>e.currentTarget.style.color="#3a5570"}>⚙</button>
         </div>
       </div>
 
-      {/* ═══ STATS BAR — fully readable ═══ */}
+      {/* ═══ STATS BAR — live stats override hardcoded values when admin has run an update ═══ */}
       <div style={{background:"#07111a",borderBottom:"1px solid #0c1824",display:"flex",flexShrink:0,overflowX:"auto"}}>
         {[
-          ["DAY", String(tDay+1), "#60a5fa"],
-          ["DATE", dayToDate(tDay), "#60a5fa"],
-          ["EVENTS", String(filteredEvents.length), "#f8fafc"],
-          ["KILLED (IRAN)", dayCasualties.killed.toLocaleString(), "#ef4444"],
-          ["INJURED", dayCasualties.injured.toLocaleString(), "#f59e0b"],
-          ["DISPLACED", (dayCasualties.displaced/1000000).toFixed(1)+"M", "#f59e0b"],
-          ["LAUNCHERS", "300+", "#f59e0b"],
-          ["HORMUZ", tDay>=3?"CLOSED":"OPEN", tDay>=3?"#ef4444":"#22c55e"],
-          ["MISSILE FIRE", "↓ 90%", "#22c55e"],
-          ["BRENT CRUDE", "$127", "#fb923c"],
+          ["DAY",          liveStats ? String(liveStats.currentDay)              : String(tDay+1),                           "#60a5fa"],
+          ["DATE",         dayToDate(tDay),                                                                                  "#60a5fa"],
+          ["EVENTS",       String(filteredEvents.length),                                                                    "#f8fafc"],
+          ["KILLED (IRAN)",liveStats ? Number(liveStats.killed).toLocaleString() : dayCasualties.killed.toLocaleString(),    "#ef4444"],
+          ["INJURED",      liveStats ? Number(liveStats.injured).toLocaleString(): dayCasualties.injured.toLocaleString(),   "#f59e0b"],
+          ["DISPLACED",    liveStats ? String(liveStats.displaced)               : (dayCasualties.displaced/1000000).toFixed(1)+"M", "#f59e0b"],
+          ["LAUNCHERS",    liveStats?.launchers || "300+",                                                                   "#f59e0b"],
+          ["HORMUZ",       tDay>=3?"CLOSED":"OPEN",                                                    tDay>=3?"#ef4444":"#22c55e"],
+          ["MISSILE FIRE", liveStats?.missiles || "↓ 90%",                                                                  "#22c55e"],
+          ["BRENT CRUDE",  liveStats?.brentCrude || "$127",                                                                 "#fb923c"],
         ].map(([l,v,c],i)=>(
           <div key={i} style={{padding:"6px 16px",borderRight:"1px solid #0c1824",textAlign:"center",flexShrink:0}}>
             <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:700,color:c,lineHeight:1,whiteSpace:"nowrap"}}>{v}</div>

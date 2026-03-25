@@ -1,8 +1,8 @@
 const CACHE_TTL = 60_000; // 1 minute cache
 let cache = null, cacheTs = 0;
 
-// Bounding box: Europe + Middle East + North Africa (wide net to ensure coverage)
-const BBOX = { lamin: 5, lomin: -10, lamax: 65, lomax: 95 };
+// Bounding box: conflict zone — Middle East, Gulf, Red Sea, Levant, Iran
+const BBOX = { lamin: 15, lomin: 29, lamax: 42, lomax: 65 };
 
 // Build fresh fetch options per request — AbortSignal must NOT be shared across calls
 // because a module-level signal fires once and permanently aborts all future fetches
@@ -50,7 +50,8 @@ function fromOpenSky(s) {
 }
 
 async function fetchAdsbLol() {
-  const url = 'https://api.adsb.lol/v2/lat/45/lon/20/dist/4000';
+  // Center on Iraq/Gulf — 2000km radius covers all conflict zone
+  const url = 'https://api.adsb.lol/v2/lat/32/lon/46/dist/2000';
   const resp = await fetch(url, fetchOpts());
   if (!resp.ok) throw new Error(`adsb.lol HTTP ${resp.status}`);
   const data = await resp.json();
@@ -64,9 +65,9 @@ async function fetchAirplanesLive() {
   // Fetch from multiple points to cover the conflict zone + Europe.
   const points = [
     [32, 46],  // Iran/Iraq/Gulf core
-    [33, 36],  // Levant/Israel/Lebanon
-    [48, 18],  // Central Europe
-    [51,  8],  // Western Europe
+    [33, 36],  // Levant/Israel/Lebanon/Syria
+    [24, 45],  // Saudi Arabia/Yemen/Red Sea
+    [26, 56],  // UAE/Oman/Gulf of Oman
   ];
   const seen = new Set();
   const aircraft = [];
