@@ -811,12 +811,15 @@ export default function WarWatch() {
     setLeadersLoad(true);
     try{
       const r=await fetch("/api/leaders");
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
       const d=await r.json();
-      if(d.error) console.warn("Leaders API:",d.error);
+      if(d.debug) console.log("Leaders debug:",d.debug);
       if(Array.isArray(d.posts)&&d.posts.length>0){
         setRealLeaders(d.posts);
         writeCache("ww_leaders",d.posts);
         setLeadersUpdatedAt(Date.now());
+      } else {
+        console.warn("Leaders API returned 0 posts. Debug:",d.debug);
       }
     }catch(e){console.error("loadRealLeaders:",e);}
     setLeadersLoad(false);
