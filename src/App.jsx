@@ -839,7 +839,7 @@ export default function WarWatch() {
     setUpdateStatus("Searching for latest information…");
     setUpdateLog([]);
     try{
-      const r=await fetch("/api/update",{
+      const r=await fetch("/.netlify/functions/update",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({token:adminPwInput}),
