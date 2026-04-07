@@ -1,54 +1,95 @@
-// leaders.js — fetches real posts from 12 verified government/military/news RSS feeds.
-// Claude Haiku filters for conflict relevance (optional — works without API key too).
-// No database required; in-memory cache refreshes every 15 minutes.
+// leaders.js — fetches real posts from verified government, military, and official news RSS feeds.
+// Prioritises direct leadership statements over news aggregators.
+// Claude Haiku filters for conflict relevance (optional — falls back to all posts without API key).
+// 15-minute in-memory cache.
 
 const RSS_SOURCES = [
-  // ── US / Western ──────────────────────────────────────────────────────────
+  // ── US Government / Military — direct official feeds ─────────────────────
+  {
+    person:"Donald Trump", role:"US President", country:"🇺🇸", color:"#ef4444",
+    platform:"Truth Social", handle:"@realDonaldTrump",
+    url:"https://truthsocial.com/@realDonaldTrump.rss",
+    useDesc:true,
+  },
   {
     person:"Donald Trump", role:"US President", country:"🇺🇸", color:"#ef4444",
     platform:"White House", handle:"@POTUS",
     url:"https://www.whitehouse.gov/news/feed/",
-    useDesc:false,
+    useDesc:true,
   },
   {
-    person:"US Dept of Defense", role:"Pentagon", country:"🇺🇸", color:"#f97316",
-    platform:"Defense.gov", handle:"@DeptofDefense",
+    person:"US Dept of Defense", role:"Pentagon Press", country:"🇺🇸", color:"#f97316",
+    platform:"Defense.gov", handle:"@PentagonPressSec",
     url:"https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=15",
-    useDesc:false,
+    useDesc:true,
   },
   {
-    person:"US CENTCOM", role:"US Central Command", country:"🇺🇸", color:"#ef4444",
+    person:"US CENTCOM", role:"US Central Command", country:"🇺🇸", color:"#60a5fa",
     platform:"CENTCOM", handle:"@CENTCOM",
     url:"https://www.centcom.mil/RSS/",
-    useDesc:false,
+    useDesc:true,
   },
+  {
+    person:"US State Dept", role:"Secretary of State", country:"🇺🇸", color:"#3b82f6",
+    platform:"State.gov", handle:"@StateDept",
+    url:"https://www.state.gov/rss-feeds/press-releases/",
+    useDesc:true,
+  },
+  // ── UK ────────────────────────────────────────────────────────────────────
   {
     person:"Keir Starmer", role:"UK Prime Minister", country:"🇬🇧", color:"#a78bfa",
     platform:"Gov.uk", handle:"@Keir_Starmer",
     url:"https://www.gov.uk/search/news-and-communications.atom?people%5B%5D=keir-starmer",
-    useDesc:false,
+    useDesc:true,
   },
   // ── United Nations ────────────────────────────────────────────────────────
   {
     person:"António Guterres", role:"UN Secretary-General", country:"🇺🇳", color:"#94a3b8",
     platform:"UN Press", handle:"@antonioguterres",
     url:"https://press.un.org/en/rss.xml",
-    useDesc:false,
+    useDesc:true,
   },
   {
     person:"UN News", role:"Middle East Desk", country:"🇺🇳", color:"#94a3b8",
-    platform:"UN News", handle:"@UN_News",
+    platform:"UN News", handle:"@UN_News_ME",
     url:"https://news.un.org/feed/subscribe/en/news/region/middle-east/feed/rss.xml",
     useDesc:true,
   },
   // ── Israel ────────────────────────────────────────────────────────────────
   {
-    person:"Israeli PM Office", role:"Israeli Government", country:"🇮🇱", color:"#3b82f6",
-    platform:"Gov.il", handle:"@IsraeliPM",
-    url:"https://www.gov.il/en/api/DataGovProxy/GetPage?databaseId=news&searchFilters%5BofficeId%5D%5B%5D=d98e0cd5-55b4-4817-ba44-90e04b5ad93d&take=15&skip=0&format=rss",
-    useDesc:false,
+    person:"Israeli PM Office", role:"Netanyahu / Israeli Govt", country:"🇮🇱", color:"#3b82f6",
+    platform:"PMO", handle:"@IsraeliPM",
+    url:"https://www.pmo.gov.il/English/MediaCenter/RSS/Pages/default.aspx",
+    useDesc:true,
   },
-  // ── News coverage ─────────────────────────────────────────────────────────
+  {
+    person:"IDF Spokesperson", role:"Israel Defense Forces", country:"🇮🇱", color:"#3b82f6",
+    platform:"IDF Blog", handle:"@IDFSpokesperson",
+    url:"https://www.idf.il/en/mini-sites/rss/",
+    useDesc:true,
+  },
+  // ── NATO / European ───────────────────────────────────────────────────────
+  {
+    person:"NATO", role:"NATO Secretary-General", country:"🌐", color:"#60a5fa",
+    platform:"NATO.int", handle:"@NATO",
+    url:"https://www.nato.int/cps/en/natolive/news.rss.htm",
+    useDesc:true,
+  },
+  // ── Regional ─────────────────────────────────────────────────────────────
+  {
+    person:"Saudi Press Agency", role:"Saudi Arabia Official", country:"🇸🇦", color:"#22c55e",
+    platform:"SPA", handle:"@SPAregions",
+    url:"https://www.spa.gov.sa/rss/En_Feeds.xml",
+    useDesc:true,
+  },
+  // ── Nuclear / International bodies ───────────────────────────────────────
+  {
+    person:"IAEA", role:"Nuclear Watchdog", country:"🌐", color:"#22c55e",
+    platform:"IAEA", handle:"@iaeaorg",
+    url:"https://www.iaea.org/feeds/topstories.rss",
+    useDesc:true,
+  },
+  // ── Middle East news (for context when official feeds are sparse) ─────────
   {
     person:"Al Jazeera", role:"Middle East Coverage", country:"🌍", color:"#eab308",
     platform:"Al Jazeera", handle:"@AJEnglish",
@@ -56,28 +97,10 @@ const RSS_SOURCES = [
     useDesc:true,
   },
   {
-    person:"Reuters", role:"Wire Service", country:"🌍", color:"#f87171",
-    platform:"Reuters", handle:"@Reuters",
-    url:"https://www.reutersagency.com/feed/?best-topics=political-general&post_type=best",
+    person:"BBC Middle East", role:"Regional Correspondent", country:"🇬🇧", color:"#a78bfa",
+    platform:"BBC", handle:"@BBCMiddleEast",
+    url:"https://feeds.bbci.co.uk/news/world/middle_east/rss.xml",
     useDesc:true,
-  },
-  {
-    person:"BBC World", role:"International News", country:"🇬🇧", color:"#a78bfa",
-    platform:"BBC", handle:"@BBCWorld",
-    url:"https://feeds.bbci.co.uk/news/world/rss.xml",
-    useDesc:true,
-  },
-  {
-    person:"AP News", role:"Wire Service", country:"🌍", color:"#60a5fa",
-    platform:"AP News", handle:"@AP",
-    url:"https://rsshub.app/apnews/topics/world-news",
-    useDesc:true,
-  },
-  {
-    person:"IAEA", role:"Nuclear Watchdog", country:"🌐", color:"#22c55e",
-    platform:"IAEA", handle:"@iaeaorg",
-    url:"https://www.iaea.org/feeds/topstories.rss",
-    useDesc:false,
   },
 ];
 
@@ -145,13 +168,11 @@ async function fetchSource(source) {
   return items.map(item => {
     const headline = stripHtml(item.title);
     const body     = stripHtml(item.desc);
-    let   text;
-    if (source.useDesc) {
-      text = body || headline;
-    } else {
-      const snippet = body ? body.slice(0, 280) + (body.length > 280 ? "…" : "") : "";
-      text = snippet ? `${headline} — ${snippet}` : headline;
-    }
+    // Always combine headline + body for richer post text
+    const snippet  = body ? body.slice(0, 350) + (body.length > 350 ? "…" : "") : "";
+    const text     = snippet && snippet !== headline
+      ? `${headline} — ${snippet}`
+      : headline;
     if (!text) return null;
     const { date, time } = parseDate(item.pubDate);
     return {
@@ -172,12 +193,31 @@ async function fetchSource(source) {
 
 // ── Claude Haiku relevance filter (optional) ─────────────────────────────────
 // If ANTHROPIC_API_KEY is not set, ALL fetched posts are returned unfiltered.
-// If Claude fails or filters everything out, originals are returned as fallback.
+// Guarantees a minimum of MIN_POSTS posts even if Claude scores nothing relevant.
+const MIN_POSTS = 8;
+
 async function filterRelevant(posts, apiKey) {
   if (!posts.length || !apiKey) return posts;
 
+  // Pre-filter by keyword so we never send >60 posts to Claude (cost control)
+  // Wide keyword set: anything geopolitically relevant passes pre-filter
+  const KEYWORDS = [
+    "iran","israel","idf","irgc","tehran","netanyahu","trump","hezbollah","houthi",
+    "nuclear","uranium","hormuz","strait","gulf","sanction","ceasefire","diplomat",
+    "missile","drone","strike","attack","military","troops","hostage","civilian",
+    "oil","energy","crude","nato","un security","middle east","gaza","west bank",
+    "saudi","qatar","uae","iraq","syria","lebanon","egypt","jordan","oman","muscat",
+    "centcom","pentagon","state department","white house","iaea","un secretary",
+  ];
+  const lower = (p) => (p.person + " " + p.text).toLowerCase();
+  const preFiltered = posts.filter(p => KEYWORDS.some(kw => lower(p).includes(kw)));
+
+  // If pre-filter gives us enough, just use those without spending Claude tokens
+  if (preFiltered.length >= MIN_POSTS) return preFiltered;
+
+  // Not enough keyword matches — ask Claude to pick the most relevant from all posts
   try {
-    const prompt = posts.map((p, i) => `[${i}] ${p.person}: ${p.text.slice(0, 200)}`).join("\n");
+    const prompt = posts.map((p, i) => `[${i}] ${p.person} (${p.platform}): ${p.text.slice(0, 200)}`).join("\n");
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -188,22 +228,25 @@ async function filterRelevant(posts, apiKey) {
       body: JSON.stringify({
         model:      "claude-haiku-4-5-20251001",
         max_tokens: 400,
-        system:     "Respond with ONLY a JSON array of integer indices, e.g. [0,2,5]. Nothing else. Never return an empty array — always include at least the most relevant items.",
+        system:     "Respond with ONLY a JSON array of integer indices, e.g. [0,2,5]. Nothing else.",
         messages: [{
           role:    "user",
-          content: `You are filtering posts for a conflict intelligence dashboard tracking the Israel-Iran-US war (Operation Epic Fury, since Feb 28 2026).\n\nInclude posts about: military strikes/operations, ceasefire/diplomacy, Iran nuclear program, US military/CENTCOM statements, Israeli military (IDF) ops, Strait of Hormuz/oil/energy, sanctions, Hezbollah/Houthi proxy activity, casualties, humanitarian crisis, aircraft carriers, rescue missions, troop movements, missile launches, air defense.\n\nAlso include: any official government statements that set geopolitical context (UN, NATO, EU statements about the conflict region).\n\nPosts:\n${prompt}\n\nReturn ONLY a JSON array of relevant indices. Include at least the 5 most relevant if any exist.`,
+          content: `Pick the most geopolitically relevant posts for a conflict intelligence dashboard covering the Israel-Iran-US war and related global security events.\n\nInclude: any military, diplomatic, nuclear, energy/oil, sanctions, humanitarian, or security-related content from ANY region. Cast a wide net — it is better to include than exclude.\n\nPosts:\n${prompt}\n\nReturn a JSON array of at least ${MIN_POSTS} indices (or all if fewer exist).`,
         }],
       }),
       signal: AbortSignal.timeout(15000),
     });
 
     if (!r.ok) return posts;
-    const raw    = ((await r.json()).content?.[0]?.text || "").trim();
-    const s = raw.indexOf("["), e = raw.lastIndexOf("]");
+    const raw  = ((await r.json()).content?.[0]?.text || "").trim();
+    const s    = raw.indexOf("["), e = raw.lastIndexOf("]");
     if (s === -1) return posts;
     const idxs   = JSON.parse(raw.slice(s, e + 1));
     const result = idxs.filter(i => Number.isInteger(i) && i >= 0 && i < posts.length).map(i => posts[i]);
-    return result.length > 0 ? result : posts; // fallback: never return empty
+    // Always return at least MIN_POSTS — fill from front if Claude returned too few
+    if (result.length >= MIN_POSTS) return result;
+    const extra = posts.filter((_, i) => !idxs.includes(i));
+    return [...result, ...extra].slice(0, Math.max(result.length, MIN_POSTS));
   } catch (err) {
     console.warn("Claude filter failed:", err.message);
     return posts; // fallback: return unfiltered
