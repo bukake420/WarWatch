@@ -9,6 +9,12 @@
 [functions."update"]
   timeout = 60
 
+[functions."events"]
+  timeout = 30
+
+[functions."vessels"]
+  timeout = 20
+
 [[redirects]]
   from = "/api/leaders"
   to = "/.netlify/functions/leaders"
@@ -27,6 +33,11 @@
 [[redirects]]
   from = "/api/update"
   to = "/.netlify/functions/update"
+  status = 200
+
+[[redirects]]
+  from = "/api/vessels"
+  to = "/.netlify/functions/vessels"
   status = 200
 
 [[headers]]

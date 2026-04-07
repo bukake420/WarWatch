@@ -1,4 +1,6 @@
-// Base events — always returned as anchor data
+// events.js — live conflict events from GDELT + BBC + Reuters + Claude classification
+// Merges with hardcoded base events; 15-minute cache.
+
 const BASE_EVENTS = [
   { id:1,  lat:35.6892, lng:51.3890, title:"Tehran — IRGC HQ & Palace Complex",      type:"us_il",     date:"2026-03-20", confidence:"confirmed", desc:"Large explosions near Saadabad Palace complex. Series of strikes on military C2 infrastructure. IRGC confirms multiple sites hit.", verified:true },
   { id:2,  lat:35.7500, lng:51.4200, title:"Tehran — Khamenei Killed (Day 1)",        type:"hvt",       date:"2026-02-28", confidence:"confirmed", desc:"Supreme Leader Ali Khamenei killed in Israeli airstrike. Confirmed by IRIB, Fars News, Trump, and Netanyahu. Son Mojtaba named successor.", verified:true },
@@ -24,18 +26,17 @@ const BASE_EVENTS = [
   { id:22, lat:24.6877, lng:46.7219, title:"Riyadh — Saudi Intercepts",              type:"iran",      date:"2026-03-19", confidence:"confirmed", desc:"Saudi Arabia intercepting Iranian missiles in own airspace. KSA says 'trust gone.'", verified:true },
 ];
 
-// In-memory cache (persists between warm Lambda invocations)
+// In-memory cache — 15 minutes (was 1 hour; faster refresh for live data)
 let cache = { data: null, ts: 0 };
-const TTL = 3600 * 1000; // 1 hour
+const TTL = 15 * 60 * 1000;
 
 exports.handler = async (event) => {
   const headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Cache-Control": "public, max-age=3600",
+    "Cache-Control": "public, max-age=900",
   };
 
-  // Return cached data if fresh
   if (cache.data && Date.now() - cache.ts < TTL) {
     return { statusCode: 200, body: JSON.stringify(cache.data), headers };
   }
@@ -43,22 +44,22 @@ exports.handler = async (event) => {
   let liveEvents = [];
 
   try {
-    // 1. Fetch GDELT Doc 2.0 — Iran/Israel/Gulf conflict headlines, last 24h
-    const gdeltUrl =
-      "https://api.gdeltproject.org/api/v2/doc/doc" +
-      "?query=iran+israel+military+strike+IRGC+IDF" +
-      "&mode=artlist&maxrecords=20&format=json&timespan=24h&sort=DateDesc";
+    // Fetch from GDELT + BBC + Reuters in parallel
+    const [gdeltResult, bbcResult, reutersResult] = await Promise.allSettled([
+      fetchGdelt(),
+      fetchRSSHeadlines("https://feeds.bbci.co.uk/news/world/rss.xml", "BBC"),
+      fetchRSSHeadlines("https://www.reutersagency.com/feed/?best-topics=political-general&post_type=best", "Reuters"),
+    ]);
 
-    const gdeltRes = await fetch(gdeltUrl);
-    const gdelt = gdeltRes.ok ? await gdeltRes.json() : { articles: [] };
-    const articles = (gdelt.articles || []).slice(0, 15);
+    const headlineBlocks = [];
 
-    if (articles.length > 0) {
-      const headlines = articles
-        .map((a, i) => `${i + 1}. ${a.title} [${a.domain}, ${a.seendate?.slice(0,8) || "today"}]`)
-        .join("\n");
+    if (gdeltResult.status === "fulfilled") headlineBlocks.push(gdeltResult.value);
+    if (bbcResult.status === "fulfilled") headlineBlocks.push(bbcResult.value);
+    if (reutersResult.status === "fulfilled") headlineBlocks.push(reutersResult.value);
 
-      // 2. Claude: classify headlines → typed event objects
+    const headlines = headlineBlocks.join("\n\n");
+
+    if (headlines.trim()) {
       const apiKey = process.env.ANTHROPIC_API_KEY;
       if (apiKey) {
         const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -70,51 +71,102 @@ exports.handler = async (event) => {
           },
           body: JSON.stringify({
             model: "claude-haiku-4-5-20251001",
-            max_tokens: 1500,
+            max_tokens: 2000,
             system: [
-              "You are a military OSINT analyst processing news headlines about the Iran-Israel-US conflict.",
-              "For each relevant headline, return a JSON event object. Ignore unrelated headlines.",
-              "Return ONLY a raw JSON array — no markdown, no explanation, no code fences.",
-              "Each object must have exactly these fields:",
-              '{ "id": <integer 2000-2999>, "lat": <float>, "lng": <float>,',
-              '  "title": "<City/Location — brief event title>",',
-              '  "type": "<us_il|iran|hezbollah|hvt>",',
-              '  "date": "<YYYY-MM-DD>",',
-              '  "confidence": "<confirmed|reported|unverified>",',
-              '  "desc": "<2-3 sentences with source attribution>",',
-              '  "verified": <true|false> }',
-              "Use accurate lat/lng for the specific location mentioned.",
-              "type = us_il for US or Israeli strikes/ops; iran for Iranian strikes/ops; hezbollah for Hezbollah; hvt for high-value target eliminations.",
-              "If no headlines are relevant to the Iran-Israel-Gulf conflict, return [].",
+              "You are a military OSINT analyst processing news headlines about the Israel-Iran-US conflict (Operation Epic Fury, ongoing since Feb 28 2026).",
+              "For each RELEVANT headline (strikes, military ops, diplomacy, nuclear, Hormuz, proxies), return a typed event object.",
+              "ONLY classify headlines that are GENUINELY related to this conflict. Ignore unrelated news.",
+              "Return ONLY a raw JSON array — no markdown, no explanation.",
+              "Each object: { \"id\": <int 2000-2999>, \"lat\": <float>, \"lng\": <float>,",
+              "  \"title\": \"<City — brief title>\",",
+              "  \"type\": \"<us_il|iran|hezbollah|hvt>\",",
+              "  \"date\": \"<YYYY-MM-DD>\",",
+              "  \"confidence\": \"<confirmed|reported|unverified>\",",
+              "  \"desc\": \"<2-3 sentences with source>\",",
+              "  \"verified\": <true|false>,",
+              "  \"sourceUrl\": \"<article URL if available>\" }",
+              "Use type=us_il for US/Israeli ops; iran for Iranian ops; hezbollah; hvt for HVT kills.",
+              "Use accurate coordinates. If no relevant headline, return [].",
             ].join(" "),
             messages: [{
               role: "user",
-              content: `Classify these headlines into OSINT events:\n\n${headlines}`,
+              content: `Classify conflict-relevant events from these headlines:\n\n${headlines}`,
             }],
           }),
+          signal: AbortSignal.timeout(20000),
         });
 
         if (claudeRes.ok) {
           const claudeData = await claudeRes.json();
-          const text = claudeData?.content?.[0]?.text?.trim() || "";
-          // Strip any accidental markdown fences
+          const text = (claudeData?.content?.[0]?.text || "").trim();
           const clean = text.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/i, "").trim();
           try {
             const parsed = JSON.parse(clean);
             if (Array.isArray(parsed)) liveEvents = parsed;
-          } catch (e) {
-            // Claude returned non-JSON — skip live events, use base only
-          }
+          } catch {}
         }
       }
     }
-  } catch (err) {
-    // Network failure — fall back to base events only
-  }
+  } catch {}
 
-  // 3. Merge base events + live events (base always wins on id conflicts)
-  const merged = [...BASE_EVENTS, ...liveEvents];
+  const existIds = new Set(BASE_EVENTS.map(e => e.id));
+  const newEvents = liveEvents.filter(e => !existIds.has(e.id));
+  const merged = [...BASE_EVENTS, ...newEvents];
   cache = { data: merged, ts: Date.now() };
 
   return { statusCode: 200, body: JSON.stringify(merged), headers };
 };
+
+// ── Fetchers ─────────────────────────────────────────────────────────────────
+
+async function fetchGdelt() {
+  const url =
+    "https://api.gdeltproject.org/api/v2/doc/doc" +
+    "?query=iran+israel+military+strike+IRGC+IDF+Gulf+Hormuz+ceasefire+nuclear" +
+    "&mode=artlist&maxrecords=20&format=json&timespan=24h&sort=DateDesc";
+  const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  const articles = (data.articles || []).slice(0, 15);
+  if (!articles.length) throw new Error("No articles");
+  return "GDELT (last 24h):\n" +
+    articles.map((a, i) =>
+      `${i + 1}. ${a.title} [${a.domain}, ${a.seendate?.slice(0, 10) || "today"}, ${a.url || ""}]`
+    ).join("\n");
+}
+
+async function fetchRSSHeadlines(url, label) {
+  const r = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+      "Accept":     "application/rss+xml, text/xml, */*",
+    },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const xml = await r.text();
+
+  const isAtom = /<entry[\s>]/.test(xml);
+  const tag    = isAtom ? "entry" : "item";
+  const rx     = new RegExp(`<${tag}[\\s>]([\\s\\S]*?)<\\/${tag}>`, "g");
+  const items  = [];
+  let m;
+
+  while ((m = rx.exec(xml)) !== null && items.length < 12) {
+    const body = m[1];
+    const get  = t => {
+      const r2 = new RegExp(
+        `<${t}(?:\\s[^>]*)?>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([\\s\\S]*?))<\\/${t}>|<${t}[^>]*href="([^"]*)"[^>]*\\/?>`,
+        "i"
+      ).exec(body);
+      return r2 ? (r2[1] || r2[2] || r2[3] || "").trim() : "";
+    };
+    const title   = get("title").replace(/<[^>]+>/g, "").trim();
+    const link    = get("link") || get("id") || "";
+    const pubDate = get("published") || get("updated") || get("pubDate") || "";
+    if (title) items.push(`${items.length + 1}. ${title} [${pubDate.slice(0, 10)}, ${link}]`);
+  }
+
+  if (!items.length) throw new Error("No items");
+  return `${label}:\n${items.join("\n")}`;
+}

@@ -1,12 +1,25 @@
-// leaders.js — fetches real posts from verified-working RSS/Atom feeds.
+// leaders.js — fetches real posts from 12 verified government/military/news RSS feeds.
 // Claude Haiku filters for conflict relevance (optional — works without API key too).
-// No database required; in-memory cache refreshes every 30 minutes.
+// No database required; in-memory cache refreshes every 15 minutes.
 
 const RSS_SOURCES = [
+  // ── US / Western ──────────────────────────────────────────────────────────
   {
     person:"Donald Trump", role:"US President", country:"🇺🇸", color:"#ef4444",
     platform:"White House", handle:"@POTUS",
     url:"https://www.whitehouse.gov/news/feed/",
+    useDesc:false,
+  },
+  {
+    person:"US Dept of Defense", role:"Pentagon", country:"🇺🇸", color:"#f97316",
+    platform:"Defense.gov", handle:"@DeptofDefense",
+    url:"https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=15",
+    useDesc:false,
+  },
+  {
+    person:"US CENTCOM", role:"US Central Command", country:"🇺🇸", color:"#ef4444",
+    platform:"CENTCOM", handle:"@CENTCOM",
+    url:"https://www.centcom.mil/RSS/",
     useDesc:false,
   },
   {
@@ -15,12 +28,7 @@ const RSS_SOURCES = [
     url:"https://www.gov.uk/search/news-and-communications.atom?people%5B%5D=keir-starmer",
     useDesc:false,
   },
-  {
-    person:"US Dept of Defense", role:"Pentagon", country:"🇺🇸", color:"#f97316",
-    platform:"Defense.gov", handle:"@DeptofDefense",
-    url:"https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=10",
-    useDesc:false,
-  },
+  // ── United Nations ────────────────────────────────────────────────────────
   {
     person:"António Guterres", role:"UN Secretary-General", country:"🇺🇳", color:"#94a3b8",
     platform:"UN Press", handle:"@antonioguterres",
@@ -28,16 +36,54 @@ const RSS_SOURCES = [
     useDesc:false,
   },
   {
+    person:"UN News", role:"Middle East Desk", country:"🇺🇳", color:"#94a3b8",
+    platform:"UN News", handle:"@UN_News",
+    url:"https://news.un.org/feed/subscribe/en/news/region/middle-east/feed/rss.xml",
+    useDesc:true,
+  },
+  // ── Israel ────────────────────────────────────────────────────────────────
+  {
+    person:"Israeli PM Office", role:"Israeli Government", country:"🇮🇱", color:"#3b82f6",
+    platform:"Gov.il", handle:"@IsraeliPM",
+    url:"https://www.gov.il/en/api/DataGovProxy/GetPage?databaseId=news&searchFilters%5BofficeId%5D%5B%5D=d98e0cd5-55b4-4817-ba44-90e04b5ad93d&take=15&skip=0&format=rss",
+    useDesc:false,
+  },
+  // ── News coverage ─────────────────────────────────────────────────────────
+  {
     person:"Al Jazeera", role:"Middle East Coverage", country:"🌍", color:"#eab308",
     platform:"Al Jazeera", handle:"@AJEnglish",
     url:"https://www.aljazeera.com/xml/rss/all.xml",
     useDesc:true,
   },
+  {
+    person:"Reuters", role:"Wire Service", country:"🌍", color:"#f87171",
+    platform:"Reuters", handle:"@Reuters",
+    url:"https://www.reutersagency.com/feed/?best-topics=political-general&post_type=best",
+    useDesc:true,
+  },
+  {
+    person:"BBC World", role:"International News", country:"🇬🇧", color:"#a78bfa",
+    platform:"BBC", handle:"@BBCWorld",
+    url:"https://feeds.bbci.co.uk/news/world/rss.xml",
+    useDesc:true,
+  },
+  {
+    person:"AP News", role:"Wire Service", country:"🌍", color:"#60a5fa",
+    platform:"AP News", handle:"@AP",
+    url:"https://rsshub.app/apnews/topics/world-news",
+    useDesc:true,
+  },
+  {
+    person:"IAEA", role:"Nuclear Watchdog", country:"🌐", color:"#22c55e",
+    platform:"IAEA", handle:"@iaeaorg",
+    url:"https://www.iaea.org/feeds/topstories.rss",
+    useDesc:false,
+  },
 ];
 
-// 30-minute in-memory cache
+// 15-minute in-memory cache (was 30-min; faster refresh for live conflict data)
 let cache = { posts: null, ts: 0 };
-const CACHE_TTL = 30 * 60 * 1000;
+const CACHE_TTL = 15 * 60 * 1000;
 
 // ── RSS / Atom parser (no dependencies) ─────────────────────────────────────
 function parseRSS(xml) {
@@ -141,11 +187,11 @@ async function filterRelevant(posts, apiKey) {
       },
       body: JSON.stringify({
         model:      "claude-haiku-4-5-20251001",
-        max_tokens: 200,
-        system:     "Respond with ONLY a JSON array of integer indices, e.g. [0,2,5]. Nothing else.",
+        max_tokens: 400,
+        system:     "Respond with ONLY a JSON array of integer indices, e.g. [0,2,5]. Nothing else. Never return an empty array — always include at least the most relevant items.",
         messages: [{
           role:    "user",
-          content: `Which posts are relevant to the ongoing Israel/Iran/Gaza/Middle East military conflict? Include: military operations, ceasefire talks, hostages, Iran nuclear program, US involvement, Strait of Hormuz, sanctions, Hezbollah.\n\nPosts:\n${prompt}\n\nReturn ONLY a JSON array of relevant indices.`,
+          content: `You are filtering posts for a conflict intelligence dashboard tracking the Israel-Iran-US war (Operation Epic Fury, since Feb 28 2026).\n\nInclude posts about: military strikes/operations, ceasefire/diplomacy, Iran nuclear program, US military/CENTCOM statements, Israeli military (IDF) ops, Strait of Hormuz/oil/energy, sanctions, Hezbollah/Houthi proxy activity, casualties, humanitarian crisis, aircraft carriers, rescue missions, troop movements, missile launches, air defense.\n\nAlso include: any official government statements that set geopolitical context (UN, NATO, EU statements about the conflict region).\n\nPosts:\n${prompt}\n\nReturn ONLY a JSON array of relevant indices. Include at least the 5 most relevant if any exist.`,
         }],
       }),
       signal: AbortSignal.timeout(15000),
