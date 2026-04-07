@@ -198,6 +198,14 @@ function Spinner({color="#3b82f6",label="LOADING"}){
   </div>;
 }
 
+// Freshness dot: green < 15min, yellow < 1h, red >= 1h (null = no data loaded)
+function FreshDot({ts}){
+  if(!ts) return <div style={{width:6,height:6,borderRadius:"50%",background:"#3a5060",flexShrink:0}}/>;
+  const age=Date.now()-ts;
+  const col=age<900_000?"#22c55e":age<3600_000?"#f59e0b":"#ef4444";
+  return <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0,animation:age<300_000?"pulse 2s ease-in-out infinite":"none"}}/>;
+}
+
 // ─── Simulation ───────────────────────────────────────────────────────────────
 function WarSimulation({ onClose }) {
   const simMapRef  = useRef(null);
@@ -572,6 +580,10 @@ export default function WarWatch() {
   const [feedUpdatedAt,    setFeedUpdatedAt]    = useState(null);
   const [osintUpdatedAt,   setOsintUpdatedAt]   = useState(null);
   const [leadersUpdatedAt, setLeadersUpdatedAt] = useState(null);
+  const [liveVessels, setLiveVessels] = useState(VESSELS);
+  const [vesselSource, setVesselSource] = useState("curated");
+  const [hormuzStatus, setHormuzStatus] = useState(null);
+  const [sourceStatuses, setSourceStatuses] = useState({});
   // Admin panel state
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPwInput,   setAdminPwInput]   = useState('');
@@ -595,14 +607,14 @@ export default function WarWatch() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
-  // Fetch live OSINT events from /api/events (overlays on top of base events)
+  // Fetch live OSINT events from /api/events — 15-minute refresh (matches backend cache)
   useEffect(()=>{
     const load=()=>fetch("/api/events")
       .then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); })
       .then(d=>{ if(Array.isArray(d)&&d.length>0){ setEvents(d); } setEventsLoading(false); })
-      .catch(()=>setEventsLoading(false)); // base events stay on failure
+      .catch(()=>setEventsLoading(false));
     load();
-    const iv=setInterval(load,3600_000);
+    const iv=setInterval(load,900_000); // 15 minutes
     return()=>clearInterval(iv);
   },[]);
 
@@ -799,19 +811,36 @@ export default function WarWatch() {
     return()=>clearInterval(t);
   },[mapReady]);
 
+  // Fetch live vessel data from /api/vessels — 5-minute refresh
+  useEffect(()=>{
+    const load=async()=>{
+      try{
+        const r=await fetch("/api/vessels",{signal:AbortSignal.timeout(12000)});
+        if(!r.ok) return;
+        const d=await r.json();
+        if(d.vessels?.length) setLiveVessels(d.vessels);
+        if(d.source) setVesselSource(d.source);
+        if(d.hormuzStatus) setHormuzStatus(d.hormuzStatus);
+      }catch{}
+    };
+    load();
+    const iv=setInterval(load,300_000); // 5 minutes
+    return()=>clearInterval(iv);
+  },[]);
+
   useEffect(()=>{
     if(!mapReady||!window.L||!lMap.current) return;
     const L=window.L,map=lMap.current;
     shipMk.current.forEach(m=>m.remove());shipMk.current=[];
     if(!layers.shipping) return;
-    VESSELS.forEach(v=>{
+    liveVessels.forEach(v=>{
       const col=STATUS_COLOR[v.status];
       const icon=L.divIcon({className:"",html:`<div style="color:${col};font-size:14px;filter:drop-shadow(0 0 4px ${col})">${v.status==="active"?"⛵":"⛴"}</div>`,iconSize:[14,14],iconAnchor:[7,7]});
       const m=L.marker([v.lat,v.lng],{icon,zIndexOffset:500});
       m.on('click',()=>setModalData({type:'ship',data:{...v}}));
       m.addTo(map);shipMk.current.push(m);
     });
-  },[mapReady,layers.shipping]);
+  },[mapReady,layers.shipping,liveVessels]);
 
   const loadRealLeaders=async()=>{
     const cached=readCache("ww_leaders");
@@ -836,19 +865,26 @@ export default function WarWatch() {
   // ── Admin: AI-powered full-site update ──────────────────────────────────────
   const doAdminUpdate=async()=>{
     setUpdateLoading(true);
-    setUpdateStatus("Searching for latest information…");
+    setUpdateStatus("Fetching live intelligence…");
     setUpdateLog([]);
     try{
       const r=await fetch("/.netlify/functions/update",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({token:adminPwInput}),
+        signal:AbortSignal.timeout(65000),
       });
       const data=await r.json();
       if(!r.ok) throw new Error(data.error||`HTTP ${r.status}`);
 
-      const {update}=data;
+      const {update,sourceLogs,sourceCount}=data;
       const log=[];
+
+      // Show which sources responded
+      if(sourceLogs?.length){
+        log.push(`━ Sources: ${sourceCount}/${sourceLogs.length} active`);
+        sourceLogs.forEach(s=>log.push(`  ${s}`));
+      }
 
       if(update.stats){
         setLiveStats(update.stats);
@@ -856,7 +892,6 @@ export default function WarWatch() {
         log.push("✓ Stats updated");
       }
       if(update.leaderPosts?.length){
-        // Prepend new posts, keep older ones, cap at 150
         setRealLeaders(prev=>{
           const merged=[...update.leaderPosts,...prev].slice(0,150);
           writeCache("ww_leaders",merged);
@@ -884,14 +919,15 @@ export default function WarWatch() {
       }
       if(update.sitrep){
         setSitrep(update.sitrep);
-        log.push("✓ Situation report updated");
+        log.push("✓ SitRep updated");
       }
 
       setUpdateLog(log);
-      setUpdateStatus(`✓ Updated at ${new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`);
+      setUpdateStatus(`✓ ${sourceCount||"?"} sources · ${new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`);
     }catch(e){
-      setUpdateStatus("✗ "+e.message);
-      setUpdateLog(["Error: "+e.message]);
+      const msg=e.name==="TimeoutError"?"Request timed out after 65s — try again":e.name==="AbortError"?"Request aborted":e.message;
+      setUpdateStatus("✗ "+msg);
+      setUpdateLog(["Error: "+msg]);
     }
     setUpdateLoading(false);
   };
@@ -1390,7 +1426,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
           {/* Body */}
           <div style={{padding:"14px"}}>
             <div style={{fontSize:10,color:"#4a7090",fontFamily:"'Share Tech Mono',monospace",marginBottom:10,lineHeight:1.6}}>
-              UPDATE uses Claude Sonnet + web search to research current news and add fresh content to all sections.
+              Pulls live intelligence from 7 real sources (GDELT, BBC, Reuters, Al Jazeera, Pentagon, UN, CENTCOM) then uses Claude Sonnet to classify &amp; structure the real data.
             </div>
             {/* UPDATE button */}
             <button
@@ -1568,13 +1604,21 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             {/* ── LEADERSHIP POSTS ── */}
             {tab==="leaders" && (
               <div>
+                <div style={{padding:"5px 10px",borderBottom:"1px solid #0a1420",display:"flex",alignItems:"center",gap:6,background:"#060a0d",flexShrink:0}}>
+                  <FreshDot ts={leadersUpdatedAt}/>
+                  <span style={{fontSize:9,color:"#3a5878",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1,flex:1}}>
+                    {leadersUpdatedAt?`UPDATED ${new Date(leadersUpdatedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`:"12 SOURCES · WHITE HOUSE · PENTAGON · UN · BBC"}
+                  </span>
+                  <button onClick={()=>{localStorage.removeItem("ww_leaders");setRealLeaders([]);loadRealLeaders();}}
+                    style={{background:"transparent",border:"none",color:"#3a5060",cursor:"pointer",fontSize:12,padding:"0 2px"}} title="Refresh">↻</button>
+                </div>
                 {leadersLoad&&<Spinner color="#a78bfa" label="FETCHING LEADER POSTS"/>}
                 {filteredLeaders.length===0 && !leadersLoad && (
                   <div style={{textAlign:"center",padding:"24px",color:"#7090a8",fontSize:12,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.8}}>
                     No relevant posts found.<br/>
-                    <span style={{fontSize:10,color:"#4a6070"}}>Fetching from Truth Social, IDF, CENTCOM, UN &amp; official gov feeds. Posts appear when leaders mention the conflict.</span>
+                    <span style={{fontSize:10,color:"#4a6070"}}>Pulling from 12 sources: White House, Pentagon, CENTCOM, BBC, Reuters, Al Jazeera, UN, IAEA, Gov.uk &amp; more. Posts filtered by conflict relevance.</span>
                     <div style={{marginTop:12}}>
-                      <button className="abtn" onClick={loadRealLeaders} style={{borderColor:"#2a3d50",color:"#7090a8"}}>↻ RETRY</button>
+                      <button className="abtn" onClick={loadRealLeaders} style={{borderColor:"#2a3d50",color:"#7090a8"}}>↻ RELOAD SOURCES</button>
                     </div>
                   </div>
                 )}
@@ -1598,7 +1642,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                     </div>
                     <div style={{fontSize:10,color:"#6080a0",fontFamily:"'Share Tech Mono',monospace",marginBottom:6}}>{post.handle}</div>
                     <div style={{fontSize:13,color:"#b8ccd8",lineHeight:1.7}}>{post.text}</div>
-                    {post.url&&<a href={post.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",marginTop:6,fontSize:9,color:"#3b82f6",fontFamily:"'Share Tech Mono',monospace",textDecoration:"none",letterSpacing:1}}>↗ VIEW ON X</a>}
+                    {post.url&&<a href={post.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-block",marginTop:6,fontSize:9,color:"#3b82f6",fontFamily:"'Share Tech Mono',monospace",textDecoration:"none",letterSpacing:1}}>↗ VIEW SOURCE</a>}
                     {(post.likes>0||post.retweets>0)&&<div style={{marginTop:4,fontSize:9,color:"#4a6070",fontFamily:"'Share Tech Mono',monospace"}}>♥ {post.likes?.toLocaleString()} · ↺ {post.retweets?.toLocaleString()}</div>}
                   </div>
                 ))}
@@ -1622,6 +1666,15 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
 
             {/* ── LIVE FEED ── */}
             {tab==="news" && (
+              <div>
+                <div style={{padding:"5px 10px",borderBottom:"1px solid #0a1420",display:"flex",alignItems:"center",gap:6,background:"#060a0d",flexShrink:0}}>
+                  <FreshDot ts={feedUpdatedAt}/>
+                  <span style={{fontSize:9,color:"#3a5878",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1,flex:1}}>
+                    {feedUpdatedAt?`UPDATED ${new Date(feedUpdatedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`:"CENTCOM · IDF · REUTERS · AL JAZEERA"}
+                  </span>
+                  {feedItems.length>0&&<button onClick={()=>{localStorage.removeItem("ww_feed");setFeedItems([]);loadFeed();}}
+                    style={{background:"transparent",border:"none",color:"#3a5060",cursor:"pointer",fontSize:12,padding:"0 2px"}} title="Refresh">↻</button>}
+                </div>
               <div style={{padding:"10px 12px"}}>
                 {feedItems.length===0&&!feedLoad&&(
                   <div style={{textAlign:"center",padding:"24px 0"}}>
@@ -1655,9 +1708,19 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                   </div>
                 )}
               </div>
+              </div>
             )}
 
             {tab==="osint" && (
+              <div>
+                <div style={{padding:"5px 10px",borderBottom:"1px solid #0a1420",display:"flex",alignItems:"center",gap:6,background:"#060a0d",flexShrink:0}}>
+                  <FreshDot ts={osintUpdatedAt}/>
+                  <span style={{fontSize:9,color:"#3a5878",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1,flex:1}}>
+                    {osintUpdatedAt?`UPDATED ${new Date(osintUpdatedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`:"IDF · CENTCOM · IRNA · OSINT CHANNELS"}
+                  </span>
+                  {tgItems.length>0&&<button onClick={()=>{localStorage.removeItem("ww_osint");setTgItems([]);loadOsint();}}
+                    style={{background:"transparent",border:"none",color:"#3a5060",cursor:"pointer",fontSize:12,padding:"0 2px"}} title="Refresh">↻</button>}
+                </div>
               <div style={{padding:"10px 12px"}}>
                 {tgItems.length===0&&!tgLoad&&(
                   <div style={{textAlign:"center",padding:"16px 0"}}>
@@ -1708,6 +1771,7 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                   </div>
                 )}
               </div>
+              </div>
             )}
 
             {tab==="sitrep" && (
@@ -1730,14 +1794,47 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             )}
 
             {tab==="sources" && (
-              <div style={{padding:"12px"}}>
-                {["ISW / CTP","ACLED","CENTCOM","IDF Spokesperson","Reuters","Al Jazeera","Amnesty International","WHO","UN OCHA","Times of Israel","Fars News","IRNA"].map((s,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid #090f19"}}>
-                    <div className="pulse" style={{width:6,height:6,borderRadius:"50%",background:"#22c55e",flexShrink:0}}/>
-                    <span style={{fontSize:12,color:"#a8c0d0",fontFamily:"'Share Tech Mono',monospace"}}>{s}</span>
-                    <span style={{marginLeft:"auto",fontSize:9,color:"#22c55e",fontFamily:"'Share Tech Mono',monospace"}}>LIVE</span>
-                  </div>
-                ))}
+              <div style={{padding:"10px"}}>
+                <div style={{fontSize:9,color:"#3a5878",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5,marginBottom:8,borderBottom:"1px solid #0a1420",paddingBottom:6}}>
+                  LIVE INTELLIGENCE SOURCES
+                </div>
+                {[
+                  {name:"GDELT Doc 2.0",     type:"News DB",    url:"https://gdeltproject.org",       note:"~25 headlines / 24h · conflict-filtered",       cat:"news"},
+                  {name:"Al Jazeera",        type:"News RSS",   url:"https://aljazeera.com",          note:"Middle East coverage · 15 items",               cat:"news"},
+                  {name:"BBC World",         type:"News RSS",   url:"https://bbc.co.uk/news/world",   note:"International coverage · 12 items",             cat:"news"},
+                  {name:"Reuters",           type:"News RSS",   url:"https://reutersagency.com",      note:"Wire service · political/conflict",             cat:"news"},
+                  {name:"Pentagon (DoD)",    type:"Gov RSS",    url:"https://defense.gov",            note:"US Dept of Defense press releases",             cat:"gov"},
+                  {name:"CENTCOM",           type:"Gov RSS",    url:"https://centcom.mil",            note:"US Central Command official releases",          cat:"gov"},
+                  {name:"UN Middle East",    type:"UN RSS",     url:"https://news.un.org",            note:"UN News Middle East regional desk",             cat:"gov"},
+                  {name:"UN Press",          type:"UN RSS",     url:"https://press.un.org",           note:"UN Secretary-General statements",              cat:"gov"},
+                  {name:"White House",       type:"Gov RSS",    url:"https://whitehouse.gov",         note:"US Presidential statements",                   cat:"gov"},
+                  {name:"Gov.uk (Starmer)",  type:"Gov Atom",   url:"https://gov.uk",                 note:"UK PM official statements",                    cat:"gov"},
+                  {name:"IAEA",              type:"UN RSS",     url:"https://iaea.org",               note:"Nuclear watchdog press releases",              cat:"gov"},
+                  {name:"ADSB.LOL",          type:"ADS-B API",  url:"https://adsb.lol",              note:"Live military aircraft tracking",              cat:"adsb"},
+                  {name:"airplanes.live",    type:"ADS-B API",  url:"https://airplanes.live",         note:"Gulf/Levant aircraft positions",               cat:"adsb"},
+                  {name:"OpenSky Network",   type:"ADS-B API",  url:"https://opensky-network.org",    note:"Middle East ADS-B fallback",                  cat:"adsb"},
+                  {name:"AIS Exchange",      type:"AIS API",    url:"https://aisexplorer.com",         note:"Arabian Sea / Hormuz vessel positions",        cat:"ais"},
+                ].map((s,i)=>{
+                  const catCol={news:"#f59e0b",gov:"#3b82f6",adsb:"#22c55e",ais:"#60a5fa"}[s.cat]||"#94a3b8";
+                  return(
+                    <div key={i} style={{padding:"6px 0",borderBottom:"1px solid #090f19"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <div style={{width:5,height:5,borderRadius:"50%",background:catCol,flexShrink:0,animation:"pulse 2s ease-in-out infinite"}}/>
+                        <a href={s.url} target="_blank" rel="noopener noreferrer"
+                          style={{fontSize:11,color:"#a8c0d0",fontFamily:"'Share Tech Mono',monospace",textDecoration:"none",flex:1}}
+                          onMouseEnter={e=>e.target.style.color="#60a5fa"}
+                          onMouseLeave={e=>e.target.style.color="#a8c0d0"}>
+                          {s.name}
+                        </a>
+                        <span style={{fontSize:8,color:catCol,fontFamily:"'Share Tech Mono',monospace",letterSpacing:0.5}}>{s.type}</span>
+                      </div>
+                      <div style={{fontSize:9,color:"#3a5878",fontFamily:"'Share Tech Mono',monospace",marginTop:2,marginLeft:11,lineHeight:1.4}}>{s.note}</div>
+                    </div>
+                  );
+                })}
+                <div style={{marginTop:10,fontSize:9,color:"#2a4050",fontFamily:"'Share Tech Mono',monospace",lineHeight:1.7,borderTop:"1px solid #0a1420",paddingTop:8}}>
+                  DATA METHODOLOGY: GDELT/BBC/Reuters headlines are classified by Claude AI into typed events with real coordinates. Government RSS feeds are filtered for conflict relevance. Aircraft and vessel positions are sourced from live ADS-B/AIS transponder data where available, curated last-known positions otherwise.
+                </div>
               </div>
             )}
           </div>
@@ -1776,8 +1873,8 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
 
           <div style={{position:"absolute",top:10,right:10,background:"rgba(6,10,13,0.92)",border:"1px solid #1a2d3d",padding:"6px 10px",zIndex:999,fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#7090a8",lineHeight:2}}>
             <div style={{color:"#22c55e",marginBottom:1}}>● {filteredEvents.length} EVENTS · DAY {tDay+1}</div>
-            <div>ACLED · ISW · CENTCOM · IDF</div>
-            <div style={{color:"#5a7888"}}>ADS-B / AIS SIMULATED</div>
+            <div>GDELT · BBC · REUTERS · CENTCOM</div>
+            <div style={{color:"#5a7888"}}>ADS-B LIVE · {vesselSource==="AIS Exchange (live)"?"AIS LIVE":"AIS ESTIMATED"}</div>
           </div>
 
           {!mapReady&&(
@@ -1827,13 +1924,25 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
             )}
             {rtab==="shipping" && (
               <div>
-                <div style={{background:"#1a0808",border:"1px solid #ef444444",margin:"8px",padding:"10px",textAlign:"center"}}>
-                  <div style={{fontFamily:"'Orbitron',monospace",fontSize:11,color:"#ef4444",fontWeight:700,letterSpacing:2}}>⚠ STRAIT OF HORMUZ</div>
-                  <div style={{fontSize:20,fontFamily:"'Orbitron',monospace",fontWeight:900,color:"#ef4444",marginTop:3}}>{tDay>=3?"CLOSED":"OPEN"}</div>
-                  <div style={{fontSize:9,color:"#c0605060",fontFamily:"'Share Tech Mono',monospace",marginTop:3,letterSpacing:1}}>~21% GLOBAL OIL DISRUPTED</div>
+                {/* Hormuz status */}
+                {(()=>{
+                  const hs=hormuzStatus||{status:tDay>=3?"CLOSED":"OPEN",color:tDay>=3?"#ef4444":"#22c55e",pctBlocked:tDay>=3?100:0};
+                  return(
+                    <div style={{background:"#1a0808",border:`1px solid ${hs.color}44`,margin:"8px",padding:"10px",textAlign:"center"}}>
+                      <div style={{fontFamily:"'Orbitron',monospace",fontSize:11,color:hs.color,fontWeight:700,letterSpacing:2}}>⚠ STRAIT OF HORMUZ</div>
+                      <div style={{fontSize:20,fontFamily:"'Orbitron',monospace",fontWeight:900,color:hs.color,marginTop:3}}>{hs.status}</div>
+                      {hs.pctBlocked>0&&<div style={{fontSize:9,color:`${hs.color}80`,fontFamily:"'Share Tech Mono',monospace",marginTop:3,letterSpacing:1}}>~21% GLOBAL OIL DISRUPTED · {hs.pctBlocked}% BLOCKED</div>}
+                    </div>
+                  );
+                })()}
+                {/* Vessel list header */}
+                <div style={{padding:"4px 10px 4px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:9,color:"#3a5878",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>
+                    {liveVessels.length} VESSELS · {vesselSource==="AIS Exchange (live)"?"AIS LIVE":"LAST KNOWN"}
+                  </span>
                 </div>
-                {VESSELS.map(v=>{
-                  const col=STATUS_COLOR[v.status];
+                {liveVessels.map(v=>{
+                  const col=STATUS_COLOR[v.status]||"#94a3b8";
                   return (
                     <div key={v.id} className="erow" style={{padding:"7px 10px",borderBottom:"1px solid #090f19"}}
                       onClick={()=>{if(lMap.current)lMap.current.setView([v.lat,v.lng],7,{animate:true});}}>
@@ -1843,16 +1952,25 @@ channel (string starting with @), time (HH:MM format), text (the post content), 
                       </div>
                       <div style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace"}}>{v.flag} · {v.type}</div>
                       <div style={{fontSize:10,color:"#8aa8bc",fontFamily:"'Share Tech Mono',monospace",marginTop:2,lineHeight:1.5}}>{v.dest}</div>
+                      {v.note&&<div style={{fontSize:9,color:"#3a5060",fontFamily:"'Share Tech Mono',monospace",marginTop:2,lineHeight:1.4}}>{v.note}</div>}
                     </div>
                   );
                 })}
                 <div style={{padding:"10px"}}>
-                  {[["Brent Crude","$127.40"],["EU Gas (TTF)","€118.50"],["Reroute Cost","↑ 340%"]].map(([l,v])=>(
+                  {[
+                    ["Brent Crude",   liveStats?.brentCrude||"$127"],
+                    ["EU Gas (TTF)",  "€118.50"],
+                    ["Reroute Cost",  "↑ 340%"],
+                    ["Vessels Diverted", liveVessels.filter(v=>v.status==="diverted").length.toString()],
+                  ].map(([l,v])=>(
                     <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #090f19"}}>
                       <span style={{fontSize:11,color:"#8aa8bc",fontFamily:"'Share Tech Mono',monospace"}}>{l}</span>
                       <span style={{fontSize:11,color:"#f59e0b",fontFamily:"'Share Tech Mono',monospace",fontWeight:700}}>{v}</span>
                     </div>
                   ))}
+                  <div style={{fontSize:9,color:"#2a3a48",fontFamily:"'Share Tech Mono',monospace",marginTop:8,lineHeight:1.6}}>
+                    Position source: {vesselSource}
+                  </div>
                 </div>
               </div>
             )}
