@@ -142,8 +142,9 @@ const CONF_CFG = {
   unverified: { color:"#ef4444", label:"UNVERIFIED" },
 };
 const STATUS_COLOR = { diverted:"#f59e0b",waiting:"#60a5fa",blocked:"#ef4444",active:"#22c55e" };
-const WAR_START = new Date("2026-02-28");
-const MAX_DAY = 23;
+const WAR_START = new Date("2026-02-28T00:00:00Z");
+// Dynamic: days elapsed since war start (min 23 so all historical events remain visible)
+const MAX_DAY = Math.max(23, Math.floor((Date.now() - WAR_START.getTime()) / 86400000));
 const TG_CHANNELS = [
   { handle:"@IDFSpokesperson",color:"#3b82f6",nation:"🇮🇱" },
   { handle:"@IRNA_NEWS",      color:"#22c55e",nation:"🇮🇷" },
@@ -934,9 +935,13 @@ export default function WarWatch() {
 
   const genSitrep=async()=>{
     setSitLoad(true);setTab("sitrep");
+    // Use actual today's date when on the current day; otherwise use timeline day
+    const isCurrentDay = tDay >= MAX_DAY;
+    const reportDate   = isCurrentDay ? new Date().toISOString().slice(0,10) : dayToDate(tDay);
+    const reportDay    = tDay + 1;
     const ev=events.filter(e=>Math.floor((new Date(e.date)-WAR_START)/86400000)<=tDay).map(e=>`[${e.date}] ${e.title}: ${e.desc}`).join("\n");
     try{
-      const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system:"You are a senior OSINT analyst at ISW/CTP. Write professional military situation reports. No preamble.",messages:[{role:"user",content:`Situation report: 2026 Iran War — Day ${tDay+1} (${dayToDate(tDay)}).\n\nOSINT:\n${ev}\n\nFormat:\nEXECUTIVE SUMMARY\n[2-3 sentences]\n\nKEY DEVELOPMENTS — LAST 24H\n[5-7 bullets]\n\nSTRATEGIC ASSESSMENT\n[Campaign trajectory, degradation, escalation]\n\nCRITICAL INDICATORS\n[3-4 items]\n\nMax 450 words.`}]})});
+      const r=await fetch("/api/anthropic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system:"You are a senior OSINT analyst at ISW/CTP. Write professional military situation reports. No preamble.",messages:[{role:"user",content:`Situation report: 2026 Iran War — Day ${reportDay} (${reportDate}).\n\nOSINT:\n${ev}\n\nFormat:\nEXECUTIVE SUMMARY\n[2-3 sentences]\n\nKEY DEVELOPMENTS — LAST 24H\n[5-7 bullets]\n\nSTRATEGIC ASSESSMENT\n[Campaign trajectory, degradation, escalation]\n\nCRITICAL INDICATORS\n[3-4 items]\n\nMax 450 words.`}]})});
       if(!r.ok){const e=await r.json();throw new Error(e.error?.message||`HTTP ${r.status}`);}
       const d=await r.json();setSitrep(d.content[0].text);
     }catch(e){setSitrep(`⚠ API error: ${e.message}`);}
