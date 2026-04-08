@@ -43,9 +43,17 @@
 [functions."news"]
   timeout = 30
 
+[functions."stats"]
+  timeout = 10
+
 [[redirects]]
   from = "/api/news"
   to = "/.netlify/functions/news"
+  status = 200
+
+[[redirects]]
+  from = "/api/stats"
+  to = "/.netlify/functions/stats"
   status = 200
 
 [[headers]]

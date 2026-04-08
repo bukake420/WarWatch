@@ -578,21 +578,33 @@ export default function WarWatch() {
   const [adminPwInput,   setAdminPwInput]   = useState('');
   const [adminMode,      setAdminMode]      = useState(false);
   const [liveStats,      setLiveStats]      = useState(null);
+  const [brentCrude,    setBrentCrude]    = useState(null);
   const [updateLoading,  setUpdateLoading]  = useState(false);
   const [updateStatus,   setUpdateStatus]   = useState('');
   const [updateLog,      setUpdateLog]      = useState([]);
   const mainTileRef = useRef(null);
 
+  // Fetch live Brent crude price (public endpoint, no admin token needed)
+  const loadLiveStats = async () => {
+    const cached = readCache("ww_live_stats");
+    if(cached?.brentCrude){ setBrentCrude(cached.brentCrude); return; }
+    try{
+      const r = await fetch("/api/stats", { signal: AbortSignal.timeout(10000) });
+      if(!r.ok) return;
+      const d = await r.json();
+      if(d.brentCrude){ setBrentCrude(d.brentCrude); writeCache("ww_live_stats", d); }
+    }catch(e){ console.warn("loadLiveStats:", e.message); }
+  };
+
   // On startup, hydrate from localStorage cache (no API call if < 8 hours old)
   useEffect(()=>{
     const feed    = readCache("ww_feed");
-    const osint   = readCache("ww_osint");
     const leaders = readCache("ww_leaders");
     const stats   = readCache("ww_stats");
     if (feed)    { setFeedItems(feed);      setFeedUpdatedAt(cacheAge("ww_feed")); }
-    if (osint)   { setTgItems(osint);       setOsintUpdatedAt(cacheAge("ww_osint")); }
     if (leaders) { setRealLeaders(leaders); setLeadersUpdatedAt(cacheAge("ww_leaders")); }
     if (stats)   { setLiveStats(stats); }
+    loadLiveStats();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
@@ -895,13 +907,13 @@ export default function WarWatch() {
         log.push(`✓ ${update.leaderPosts.length} leader posts added`);
       }
       if(update.osintPosts?.length){
-        setTgItems(prev=>{
+        // osintPosts now shown via realLeaders — merge them in
+        setRealLeaders(prev=>{
           const merged=[...update.osintPosts,...prev].slice(0,150);
-          writeCache("ww_osint",merged);
+          writeCache("ww_leaders",merged);
           return merged;
         });
-        setOsintUpdatedAt(Date.now());
-        log.push(`✓ ${update.osintPosts.length} OSINT posts added`);
+        log.push(`✓ ${update.osintPosts.length} OSINT posts merged`);
       }
       if(update.events?.length){
         setEvents(prev=>{
@@ -1300,7 +1312,7 @@ export default function WarWatch() {
             <div style={{fontSize:9,color:"#2a4050",fontFamily:"'Share Tech Mono',monospace",marginBottom:6,letterSpacing:1}}>QUICK ACTIONS</div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <button onClick={()=>{setLiveStats(null);localStorage.removeItem("ww_stats");setUpdateStatus("Stats reset to timeline defaults");}} style={{background:"transparent",border:"1px solid #1e2d3d",color:"#4a6070",padding:"5px 8px",fontFamily:"'Share Tech Mono',monospace",fontSize:9,cursor:"pointer",textAlign:"left",letterSpacing:1}}>↺ RESET STATS TO TIMELINE</button>
-              <button onClick={()=>{["ww_leaders","ww_osint","ww_stats"].forEach(k=>localStorage.removeItem(k));setRealLeaders([]);setLiveStats(null);setUpdateStatus("All caches cleared");}} style={{background:"transparent",border:"1px solid #2a1010",color:"#6a3030",padding:"5px 8px",fontFamily:"'Share Tech Mono',monospace",fontSize:9,cursor:"pointer",textAlign:"left",letterSpacing:1}}>✕ CLEAR ALL CACHES</button>
+              <button onClick={()=>{["ww_leaders","ww_osint","ww_stats","ww_live_stats"].forEach(k=>localStorage.removeItem(k));setRealLeaders([]);setLiveStats(null);setBrentCrude(null);setUpdateStatus("All caches cleared");}} style={{background:"transparent",border:"1px solid #2a1010",color:"#6a3030",padding:"5px 8px",fontFamily:"'Share Tech Mono',monospace",fontSize:9,cursor:"pointer",textAlign:"left",letterSpacing:1}}>✕ CLEAR ALL CACHES</button>
             </div>
             <div style={{marginTop:10,fontSize:9,color:"#1e3040",fontFamily:"'Share Tech Mono',monospace",borderTop:"1px solid #0c1824",paddingTop:8}}>
               Set ADMIN_TOKEN env var in Netlify to secure this panel. ANTHROPIC_API_KEY required for update.
@@ -1365,7 +1377,7 @@ export default function WarWatch() {
           ["LAUNCHERS",         liveStats?.launchers || "300+",                                                                        "#f59e0b"],
           ["HORMUZ (SCEN)",     tDay>=3?"CLOSED":"OPEN",                                                    tDay>=3?"#ef4444":"#22c55e"],
           ["MISSILE FIRE",      liveStats?.missiles || "↓ 90%",                                                                        "#22c55e"],
-          ["BRENT CRUDE",       liveStats?.brentCrude || "$127*",                                                                      "#fb923c"],
+          ["BRENT CRUDE",       brentCrude || liveStats?.brentCrude || "$127*",                                                       "#fb923c"],
         ].map(([l,v,c],i)=>(
           <div key={i} style={{padding:"6px 16px",borderRight:"1px solid #0c1824",textAlign:"center",flexShrink:0}}>
             <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:700,color:c,lineHeight:1,whiteSpace:"nowrap"}}>{v}</div>
