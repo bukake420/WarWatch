@@ -127,7 +127,6 @@ exports.handler = async () => {
       vessels,
       source: dataSource,
       lastUpdated: new Date().toISOString(),
-      hormuzStatus: getHormuzStatus(),
     }),
   };
 };
@@ -208,11 +207,3 @@ function mergeVessels(curated, live) {
   return merged;
 }
 
-function getHormuzStatus() {
-  // Returns current Hormuz Strait status based on scenario timeline
-  const day = Math.max(1, Math.floor((Date.now() - new Date("2026-02-28").getTime()) / 86400000) + 1);
-  if (day < 5)  return { status: "CLOSED", pctBlocked: 100, color: "#ef4444" };
-  if (day < 15) return { status: "RESTRICTED", pctBlocked: 60, color: "#f59e0b" };
-  if (day < 30) return { status: "RESTRICTED", pctBlocked: 40, color: "#f59e0b" };
-  return { status: "PARTIALLY OPEN", pctBlocked: 20, color: "#eab308" };
-}
