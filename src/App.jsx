@@ -114,37 +114,47 @@ const SIM_SCENES = [
   { type:"title",  day:21, duration:11000, title:"THE COST", subtitle:"1,400+ killed in Iran · 18,000+ injured · 3M+ displaced\nStrait of Hormuz closed · Brent crude at $127\nNATO called 'cowards' by Trump", narrative:"", clearMap:true },
 ];
 
-const COUNTRY_COLOR = {
-  "United States":"#3b82f6","Israel":"#22c55e","Iran":"#ef4444",
-  "United Arab Emirates":"#f59e0b","Saudi Arabia":"#f59e0b",
-  "Qatar":"#a855f7","Turkey":"#06b6d4","India":"#f97316",
-  "Pakistan":"#84cc16","Egypt":"#f59e0b","Iraq":"#ef4444",
-};
-const acColor = ac => COUNTRY_COLOR[ac.country] || "#94a3b8";
-
 const VESSELS = [
-  { id:"mv1",name:"BW AMAZON",    type:"VLCC",       flag:"SG",status:"diverted",lat:22.50,lng:60.80,dest:"Cape of Good Hope reroute" },
-  { id:"mv2",name:"NORDIC LUNA",  type:"LNG Carrier",flag:"NO",status:"waiting", lat:24.20,lng:57.50,dest:"Holding — Gulf of Oman" },
-  { id:"mv3",name:"DELPHIN GAS",  type:"LNG Carrier",flag:"GR",status:"blocked", lat:26.50,lng:56.40,dest:"BLOCKED — Hormuz Closure" },
-  { id:"mv4",name:"PACIFIC TITAN",type:"VLCC",       flag:"JP",status:"diverted",lat:21.80,lng:62.10,dest:"Cape of Good Hope reroute" },
-  { id:"mv5",name:"GULF STAR",    type:"Container",  flag:"KR",status:"diverted",lat:23.00,lng:64.00,dest:"Cape of Good Hope reroute" },
-  { id:"mv6",name:"IRAN SAVIZ",   type:"Cargo",      flag:"IR",status:"active",  lat:13.50,lng:42.80,dest:"Red Sea — IRGC logistics" },
-  { id:"mv7",name:"USS FORD CVN", type:"Carrier CSG",flag:"US",status:"active",  lat:23.20,lng:64.30,dest:"USN CVN — Arabian Sea" },
-  { id:"mv8",name:"USS BUNKER HL",type:"DDG",        flag:"US",status:"active",  lat:23.80,lng:65.00,dest:"USN DDG — Tomahawk ops" },
+  // ── US Navy – Carrier Strike Groups ──
+  { id:"cvn78", name:"USS GERALD R. FORD",    type:"Carrier CVN",  flag:"US", status:"active",  lat:18.00, lng:62.50, dest:"Arabian Sea strike ops — CVW-8 sorties" },
+  { id:"cvn69", name:"USS EISENHOWER",         type:"Carrier CVN",  flag:"US", status:"active",  lat:23.50, lng:59.00, dest:"Gulf of Oman — reserve strike package" },
+  { id:"cvn70", name:"USS CARL VINSON",        type:"Carrier CVN",  flag:"US", status:"active",  lat:16.00, lng:62.00, dest:"Southern Arabian Sea — Day 28 arrival" },
+  { id:"ddg107",name:"USS GRAVELY",            type:"DDG-51",       flag:"US", status:"active",  lat:24.80, lng:58.20, dest:"Forward Hormuz screen — BMD role" },
+  { id:"ddg87", name:"USS MASON",              type:"DDG-51",       flag:"US", status:"active",  lat:26.20, lng:56.90, dest:"Hormuz patrol — anti-drone escort" },
+  { id:"ddg67", name:"USS COLE",               type:"DDG-51",       flag:"US", status:"active",  lat:14.50, lng:43.50, dest:"Red Sea northern sector — Tomahawk" },
+  { id:"ddg64", name:"USS CARNEY",             type:"DDG-51",       flag:"US", status:"active",  lat:13.00, lng:42.50, dest:"Bab el-Mandeb — drone intercept ops" },
+  { id:"lhd5",  name:"USS BATAAN",             type:"LHD Amphib",   flag:"US", status:"active",  lat:23.50, lng:60.50, dest:"Amphibious ready group — 24th MEU" },
+  // ── UK Royal Navy ──
+  { id:"d34",   name:"HMS DIAMOND",            type:"Type 45 DDG",  flag:"UK", status:"active",  lat:13.50, lng:43.20, dest:"Northern Red Sea — air defense picket" },
+  // ── Iranian Navy ──
+  { id:"f74",   name:"IRIS SAHAND",            type:"Moudge Frigate",flag:"IR",status:"damaged", lat:26.80, lng:56.50, dest:"Damaged — withdrawing to Bandar Abbas" },
+  { id:"irgc1", name:"IRGC DIV-1 (SPEEDBOATS)",type:"Fast Attack",  flag:"IR", status:"active",  lat:27.20, lng:56.80, dest:"Near Bandar Abbas — harassment ops" },
+  // ── Commercial (diverted / holding east of Hormuz) ──
+  { id:"mv1",   name:"BW AMAZON",              type:"VLCC",         flag:"SG", status:"diverted",lat:22.50, lng:60.80, dest:"Rerouting via Cape of Good Hope (+12d)" },
+  { id:"mv2",   name:"NORDIC LUNA",            type:"LNG Carrier",  flag:"NO", status:"waiting", lat:24.20, lng:57.50, dest:"Holding — Gulf of Oman anchorage" },
+  { id:"mv3",   name:"DELPHIN GAS",            type:"LNG Carrier",  flag:"GR", status:"blocked", lat:26.50, lng:56.40, dest:"BLOCKED — last position near Hormuz" },
+  { id:"mv4",   name:"PACIFIC TITAN",          type:"VLCC",         flag:"JP", status:"diverted",lat:21.80, lng:62.10, dest:"Rerouting via Cape of Good Hope" },
+  { id:"mv5",   name:"MOUNT BLANC",            type:"VLCC",         flag:"MH", status:"waiting", lat:25.00, lng:56.40, dest:"Anchored off Fujairah — awaiting corridor" },
+  { id:"mv6",   name:"KOREA GAS",              type:"LNG Carrier",  flag:"KR", status:"waiting", lat:23.80, lng:61.50, dest:"Holding — Gulf of Oman" },
+  { id:"mv7",   name:"GULF STAR",              type:"Container",    flag:"KR", status:"diverted",lat:23.00, lng:64.00, dest:"Rerouting via Cape of Good Hope" },
 ];
 
 const TYPE_CFG = {
-  us_il:    { color:"#3b82f6", label:"US/IL Strike",  icon:"✈" },
-  iran:     { color:"#ef4444", label:"Iranian Strike", icon:"⚡" },
-  hezbollah:{ color:"#f59e0b", label:"Hezbollah",      icon:"◆" },
-  hvt:      { color:"#a855f7", label:"HVT Eliminated", icon:"☠" },
+  us_il:       { color:"#3b82f6", label:"US/IL Strike",   icon:"✈" },
+  iran:        { color:"#ef4444", label:"Iranian Strike",  icon:"⚡" },
+  hezbollah:   { color:"#f59e0b", label:"Hezbollah",       icon:"◆" },
+  hvt:         { color:"#a855f7", label:"HVT Eliminated",  icon:"☠" },
+  troops:      { color:"#22c55e", label:"Troop Movement",  icon:"⊕" },
+  naval:       { color:"#06b6d4", label:"Naval Activity",  icon:"⛵" },
+  humanitarian:{ color:"#f97316", label:"Humanitarian",    icon:"✚" },
+  diplomatic:  { color:"#8b5cf6", label:"Diplomatic",      icon:"◉" },
 };
 const CONF_CFG = {
   confirmed:  { color:"#22c55e", label:"CONFIRMED" },
   reported:   { color:"#f59e0b", label:"REPORTED" },
   unverified: { color:"#ef4444", label:"UNVERIFIED" },
 };
-const STATUS_COLOR = { diverted:"#f59e0b",waiting:"#60a5fa",blocked:"#ef4444",active:"#22c55e" };
+const STATUS_COLOR = { diverted:"#f59e0b",waiting:"#60a5fa",blocked:"#ef4444",active:"#22c55e",damaged:"#a855f7" };
 const WAR_START = new Date("2026-02-28T00:00:00Z");
 // Dynamic: days elapsed since war start (min 23 so all historical events remain visible)
 const MAX_DAY = Math.max(23, Math.floor((Date.now() - WAR_START.getTime()) / 86400000));
@@ -160,7 +170,7 @@ const STATS_DATA = [
   { label:"Missile Fire",        value:"↓ 94%",  color:"#22c55e" },
 ];
 
-const dayToDate = d => { const dt=new Date(WAR_START); dt.setDate(dt.getDate()+d); return dt.toLocaleDateString("en-US",{month:"short",day:"numeric"}); };
+const dayToDate = d => new Date(WAR_START.getTime() + d * 86400000).toLocaleDateString("en-US", {month:"short", day:"numeric", timeZone:"UTC"});
 
 // ─── localStorage cache helpers (8-hour TTL) ─────────────────────────────────
 const CACHE_TTL = 8 * 60 * 60 * 1000;
@@ -179,13 +189,6 @@ function writeCache(key, data) {
 function cacheAge(key) {
   try { const raw = localStorage.getItem(key); if (!raw) return null; return JSON.parse(raw).ts; } catch { return null; }
 }
-
-const moveAC = ac => {
-  if(!ac.spd||!ac.hdg) return ac;
-  const r=ac.hdg*Math.PI/180;
-  const step=(ac.spd/1.94384)/111111*2; // knots→m/s→degrees per 2-sec tick
-  return{...ac,lat:ac.lat+Math.cos(r)*step,lng:ac.lng+Math.sin(r)*step};
-};
 
 function Spinner({color="#3b82f6",label="LOADING"}){
   return <div style={{textAlign:"center",padding:"28px 0"}}>
@@ -536,19 +539,17 @@ export default function WarWatch() {
   const mapRef     = useRef(null);
   const lMap       = useRef(null);
   const strikeMk   = useRef([]);
-  const aircraftMk = useRef({});
   const shipMk     = useRef([]);
-  const acData     = useRef([]);
 
   const [time,       setTime]       = useState(new Date());
   const [tab,        setTab]        = useState("events");
-  const [rtab,       setRtab]       = useState("aircraft");
+  const [rtab,       setRtab]       = useState("shipping");
   const [filter,     setFilter]     = useState("all");
   const [confFilter, setConfFilter] = useState("all");
   const [leaderFilter, setLeaderFilter] = useState("all");
   const [visibleLeaders, setVisibleLeaders] = useState(5);
   const [selected,   setSelected]   = useState(null);
-  const [layers,     setLayers]     = useState({strikes:true,aircraft:true,shipping:true});
+  const [layers,     setLayers]     = useState({strikes:true,shipping:true});
   const [tDay,       setTDay]       = useState(MAX_DAY);
   const [playing,    setPlaying]    = useState(false);
   const [sitrep,     setSitrep]     = useState("");
@@ -556,9 +557,6 @@ export default function WarWatch() {
   const [feedItems,  setFeedItems]  = useState([]);
   const [feedLoad,   setFeedLoad]   = useState(false);
   const [mapReady,   setMapReady]   = useState(false);
-  const [acList,     setAcList]     = useState([]);
-  const [acFetchKey, setAcFetchKey] = useState(0);
-  const [acLoaded,   setAcLoaded]   = useState(false);
   const [simMode,    setSimMode]    = useState(false);
   const [newAlert,   setNewAlert]   = useState(false);
   const [satellite,  setSatellite]  = useState(false);
@@ -737,85 +735,6 @@ export default function WarWatch() {
       m.addTo(map);strikeMk.current.push(m);
     });
   },[mapReady,filteredEvents,layers.strikes]);
-
-  // Fetch live aircraft directly from browser (avoids Netlify function timeouts/IP blocks)
-  useEffect(()=>{
-    if(!mapReady) return;
-    const BBOX = { lamin:15, lomin:29, lamax:42, lomax:65 }; // conflict zone only
-    const normalize = ac => {
-      const lat = ac.lat, lng = ac.lon;
-      if(lat==null||lng==null) return null;
-      if(lat<BBOX.lamin||lat>BBOX.lamax||lng<BBOX.lomin||lng>BBOX.lomax) return null;
-      if(ac.alt_baro==='ground') return null;
-      return {
-        id:       ac.hex,
-        callsign: (ac.flight?.trim()||ac.hex||'').toUpperCase(),
-        country:  ac.r||'Unknown',
-        lat, lng,
-        alt:   typeof ac.alt_baro==='number' ? Math.round(ac.alt_baro) : null,
-        spd:   ac.gs   != null ? Math.round(ac.gs)   : null,
-        hdg:   ac.track ?? 0,
-        vrate: ac.baro_rate != null ? Math.round(ac.baro_rate/196.85*10)/10 : 0,
-      };
-    };
-    const load=async()=>{
-      try{
-        const r=await fetch('/api/aircraft',{signal:AbortSignal.timeout(15000)});
-        if(!r.ok) return;
-        const d=await r.json();
-        const aircraft=(d.aircraft||[]).map(ac=>{
-          // already normalized by the server-side function
-          if(ac.lat==null||ac.lng==null) return null;
-          if(ac.lat<BBOX.lamin||ac.lat>BBOX.lamax||ac.lng<BBOX.lomin||ac.lng>BBOX.lomax) return null;
-          return ac;
-        }).filter(Boolean);
-        if(!aircraft.length) return;
-        setAcLoaded(true);
-        acData.current=aircraft;
-        setAcList([...aircraft]);
-        setAcFetchKey(k=>k+1);
-      }catch(e){ /* silent */ }
-      setAcLoaded(true);
-    };
-    load();
-    const t=setInterval(load,60_000);
-    return()=>clearInterval(t);
-  },[mapReady]);
-
-  useEffect(()=>{
-    if(!mapReady||!window.L||!lMap.current) return;
-    const L=window.L,map=lMap.current;
-    Object.values(aircraftMk.current).forEach(m=>m.remove());aircraftMk.current={};
-    if(!layers.aircraft) return;
-    acData.current.forEach(ac=>{
-      const col=acColor(ac);
-      const icon=L.divIcon({className:"",html:`<div style="transform:rotate(${ac.hdg}deg);color:${col};font-size:13px;filter:drop-shadow(0 0 4px ${col})">✈</div>`,iconSize:[14,14],iconAnchor:[7,7]});
-      const m=L.marker([ac.lat,ac.lng],{icon,zIndexOffset:1000});
-      m.on('click',()=>setModalData({type:'aircraft',data:{...ac}}));
-      m.addTo(map);aircraftMk.current[ac.id]=m;
-    });
-  },[mapReady,layers.aircraft,acFetchKey]);
-
-  useEffect(()=>{
-    if(!mapReady) return;
-    const t=setInterval(()=>{
-      const L=window.L;
-      acData.current=acData.current.map(ac=>{
-        const u=moveAC(ac);
-        const mk=aircraftMk.current[ac.id];
-        if(mk){
-          mk.setLatLng([u.lat,u.lng]);
-          if(L && u.hdg!==ac.hdg){
-            const col=acColor(u);
-            mk.setIcon(L.divIcon({className:"",html:`<div style="transform:rotate(${u.hdg}deg);color:${col};font-size:13px;filter:drop-shadow(0 0 4px ${col})">✈</div>`,iconSize:[14,14],iconAnchor:[7,7]}));
-          }
-        }
-        return u;
-      });
-      setAcList([...acData.current]);
-    },2000);
-    return()=>clearInterval(t);
-  },[mapReady]);
 
   // Fetch live vessel data from /api/vessels — 5-minute refresh
   useEffect(()=>{
@@ -1094,40 +1013,7 @@ export default function WarWatch() {
     const {type, data} = modalData;
     const close = ()=>setModalData(null);
     let content = null;
-    if(type==='aircraft') {
-      const col = acColor(data);
-      const vrateLabel = data.vrate > 1 ? "▲ CLIMBING" : data.vrate < -1 ? "▼ DESCENDING" : "→ LEVEL";
-      content = (
-        <div>
-          <div style={{background:"#0a1520",padding:"10px 14px",borderBottom:"1px solid #1e2d3d",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:700,color:col,letterSpacing:2}}>{data.callsign}</div>
-              <div style={{fontSize:11,color:"#8b9eb5",letterSpacing:1,marginTop:2}}>{data.country}</div>
-            </div>
-            <span style={{background:"#0a1520",border:`1px solid ${col}`,color:col,padding:"2px 8px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>ADS-B LIVE</span>
-          </div>
-          <ImgBox src={null} placeholder="✈"/>
-          <div style={{padding:"12px 14px"}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:10}}>
-              {[
-                ["ALTITUDE", data.alt!=null ? data.alt.toLocaleString()+"ft" : "N/A"],
-                ["HEADING",  data.hdg+"°"],
-                ["SPEED",    data.spd!=null ? data.spd+"kt" : "N/A"],
-                ["VRATE",    vrateLabel],
-              ].map(([l,v])=>(
-                <div key={l} style={{background:"#0a1520",border:"1px solid #1e2d3d",padding:"6px 8px",textAlign:"center"}}>
-                  <div style={{fontFamily:"'Orbitron',monospace",fontSize:11,fontWeight:700,color:"#f8fafc",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</div>
-                  <div style={{fontSize:9,color:"#8b9eb5",letterSpacing:1,marginTop:2}}>{l}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{background:"#08111a",border:"1px solid #1a2d3a",color:"#8ba8bc",padding:"8px 10px",fontSize:10,fontFamily:"'Share Tech Mono',monospace",lineHeight:1.6,letterSpacing:.5}}>
-              Live position via <span style={{color:"#60a5fa"}}>OpenSky Network</span> ADS-B feed · updated every 5 min
-            </div>
-          </div>
-        </div>
-      );
-    } else if(type==='ship') {
+    if(type==='ship') {
       const wikiUrl = VESSEL_WIKI[data.type] || null;
       const flagMap={US:"🇺🇸",SG:"🇸🇬",NO:"🇳🇴",GR:"🇬🇷",JP:"🇯🇵",KR:"🇰🇷",IR:"🇮🇷"};
       const stColor=STATUS_COLOR[data.status]||"#94a3b8";
@@ -1407,7 +1293,7 @@ export default function WarWatch() {
           {/* Event filters */}
           {tab==="events" && (
             <div style={{padding:"6px 10px",borderBottom:"1px solid #0a1420",display:"flex",gap:3,flexShrink:0,flexWrap:"wrap",alignItems:"center"}}>
-              {[["all","ALL"],["us_il","US/IL"],["iran","IRAN"],["hezbollah","HZBL"],["hvt","HVT"]].map(([k,l])=>(
+              {[["all","ALL"],["us_il","US/IL"],["iran","IRAN"],["hezbollah","HZBL"],["hvt","HVT"],["troops","TROOPS"],["naval","NAVAL"],["humanitarian","AID"],["diplomatic","DIPL"]].map(([k,l])=>(
                 <button key={k} className={`fbtn ${filter===k?"on":""}`} onClick={()=>setFilter(k)}>{l}</button>
               ))}
               <div style={{width:"100%",height:1,background:"#0a1420",marginTop:3}}/>
@@ -1690,7 +1576,7 @@ export default function WarWatch() {
           <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
 
           <div style={{position:"absolute",top:10,left:10,zIndex:999,display:"flex",flexDirection:"column",gap:5}}>
-            {[["strikes","● STRIKES",layers.strikes,"#ef4444"],["aircraft","✈ AIRCRAFT",layers.aircraft,"#22c55e"],["shipping","⛴ SHIPPING",layers.shipping,"#f59e0b"]].map(([k,l,on,c])=>(
+            {[["strikes","● STRIKES",layers.strikes,"#ef4444"],["shipping","⛴ SHIPPING",layers.shipping,"#f59e0b"]].map(([k,l,on,c])=>(
               <button key={k} className="lbtn" onClick={()=>toggleLayer(k)} style={{borderColor:on?c:"#2a3d50",color:on?c:"#7090a8",background:"rgba(6,10,13,0.92)"}}>{l}</button>
             ))}
             <button className="lbtn" onClick={()=>setSatellite(s=>!s)}
@@ -1719,7 +1605,7 @@ export default function WarWatch() {
           <div style={{position:"absolute",top:10,right:10,background:"rgba(6,10,13,0.92)",border:"1px solid #1a2d3d",padding:"6px 10px",zIndex:999,fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#7090a8",lineHeight:2}}>
             <div style={{color:"#22c55e",marginBottom:1}}>● {filteredEvents.length} EVENTS · DAY {tDay+1}</div>
             <div>GDELT · BBC · REUTERS · CENTCOM</div>
-            <div style={{color:"#5a7888"}}>ADS-B LIVE · {vesselSource==="AIS Exchange (live)"?"AIS LIVE":"AIS ESTIMATED"}</div>
+            <div style={{color:"#5a7888"}}>{vesselSource==="AIS Exchange (live)"?"AIS LIVE":"AIS ESTIMATED"} · {liveVessels.length} VESSELS</div>
           </div>
 
           {!mapReady&&(
@@ -1731,43 +1617,11 @@ export default function WarWatch() {
 
         {/* ─── RIGHT PANEL ─── */}
         <div style={{width:252,background:"#070b10",borderLeft:"1px solid #0a1420",display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0}}>
-          <div style={{display:"flex",borderBottom:"1px solid #0a1420",background:"#060a0d",flexShrink:0}}>
-            <button className={`tbtn ${rtab==="aircraft"?"on":""}`} onClick={()=>setRtab("aircraft")} style={{flex:1}}>✈ Aircraft</button>
-            <button className={`tbtn ${rtab==="shipping"?"on":""}`} onClick={()=>setRtab("shipping")} style={{flex:1}}>⛴ Hormuz</button>
+          <div style={{borderBottom:"1px solid #0a1420",background:"#060a0d",padding:"6px 10px",flexShrink:0}}>
+            <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1.5}}>⛴ NAVAL TRACKING</span>
           </div>
           <div style={{flex:1,overflowY:"auto"}}>
-            {rtab==="aircraft" && (
-              <div>
-                <div style={{padding:"6px 11px",borderBottom:"1px solid #0a1420",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>TRACKING {acList.length} AIRCRAFT</span>
-                  <div className="scan" style={{width:7,height:7,borderRadius:"50%",background:"#22c55e"}}/>
-                </div>
-                {acList.length===0 && !acLoaded && (
-                  <div style={{padding:"20px 11px",textAlign:"center",color:"#3a5060",fontSize:11,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>LOADING ADS-B FEED...</div>
-                )}
-                {acList.length===0 && acLoaded && (
-                  <div style={{padding:"20px 11px",textAlign:"center",color:"#3a5060",fontSize:11,fontFamily:"'Share Tech Mono',monospace",letterSpacing:1}}>NO AIRCRAFT IN RANGE</div>
-                )}
-                {acList.map(ac=>{
-                  const col=acColor(ac);
-                  return (
-                    <div key={ac.id} className="erow" style={{padding:"7px 11px",borderBottom:"1px solid #090f19"}}
-                      onClick={()=>{if(lMap.current)lMap.current.setView([ac.lat,ac.lng],8,{animate:true});}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                        <span style={{fontSize:11,color:col,fontFamily:"'Share Tech Mono',monospace",fontWeight:700}}>{ac.callsign}</span>
-                        <span style={{fontSize:9,color:"#3a5060",textTransform:"uppercase",letterSpacing:1,fontFamily:"'Share Tech Mono',monospace"}}>{ac.country}</span>
-                      </div>
-                      <div style={{display:"flex",gap:10,marginTop:2}}>
-                        <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace"}}>{ac.alt!=null?`FL${Math.floor(ac.alt/100)}`:"—"}</span>
-                        <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace"}}>{ac.spd!=null?`${ac.spd}kt`:"—"}</span>
-                        <span style={{fontSize:10,color:"#7090a8",fontFamily:"'Share Tech Mono',monospace"}}>{ac.hdg}°</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            {rtab==="shipping" && (
+            {true && (
               <div>
                 {/* Hormuz status */}
                 {(()=>{
